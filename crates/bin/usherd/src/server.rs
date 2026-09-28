@@ -4,7 +4,10 @@ use anyhow::Result;
 use futures::{SinkExt, StreamExt};
 use iam::IAm;
 use key::enclave::Enclave;
-use lattice::{Lattice, Rhex};
+use lattice::{
+    Lattice, Rhex,
+    usher::{self, UsherMap},
+};
 use tokio::sync::RwLock;
 use transform::registry::TransformRegistry;
 
@@ -15,11 +18,11 @@ use crate::{
 };
 
 pub async fn run(config: UsherdConfig) -> Result<()> {
-    let addr = format!("0.0.0.0:{}", config.port);
+    // Set up the connection settings
+    let addr = format!("{}:{}", config.bind, config.port);
 
     // If rebuild=true we fire off the rebuilt bootstrap procedure,
     // otherwise we build from our existing cache
-
     let lattice = if config.rebuild {
         rebuild::rebuild(&config).unwrap()
     } else {
@@ -28,18 +31,29 @@ pub async fn run(config: UsherdConfig) -> Result<()> {
         building_lattice
     };
     println!("🧬 Lattice is live! {} scopes loaded", lattice.scopes.len());
-    // TODO: Load Transforms into registry
-    let trans_registry = TransformRegistry::new();
-    // TODO: Load IAm entries
-    let iam = IAm::new();
+
+    // Load the cached Usher Map
+    let usher_map = usher::map::disk_from(&config.usher_map);
+    // Load I Am entries
+    let i_am = IAm::disk_from(&config.i_am)?;
+
+    // Load enclave and populate it
     let mut enclave = Enclave::new(Some(config.enclave.clone()));
     enclave.populate()?;
+
+    // Check I Am against Enclave to make sure we have all the local
+    // keys we need
+    enclave.check_map(i_am.get_local()?)?;
+
+    // TODO: Load Transforms into registry
+    let trans_registry = TransformRegistry::new();
 
     // RwLock-ed items
     let lattice = Arc::new(RwLock::new(lattice));
     let trans_registry = Arc::new(RwLock::new(trans_registry));
-    let iam = Arc::new(RwLock::new(iam));
+    let i_am = Arc::new(RwLock::new(i_am));
     let enclave = Arc::new(RwLock::new(enclave));
+    let usher_map = Arc::new(RwLock::new(usher_map));
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     println!("🟢 Server listening on {}", addr);
@@ -49,8 +63,9 @@ pub async fn run(config: UsherdConfig) -> Result<()> {
         let c = config.clone();
         let lattice_clone = Arc::clone(&lattice);
         let trans_reg_clone = Arc::clone(&trans_registry);
-        let iam_clone = Arc::clone(&iam);
+        let iam_clone = Arc::clone(&i_am);
         let enclave_clone = Arc::clone(&enclave);
+        let usher_map_clone = Arc::clone(&usher_map);
         tokio::spawn(async move {
             if let Err(e) = handle_connection(
                 stream,
@@ -59,6 +74,7 @@ pub async fn run(config: UsherdConfig) -> Result<()> {
                 trans_reg_clone,
                 iam_clone,
                 enclave_clone,
+                usher_map_clone,
             )
             .await
             {
@@ -75,6 +91,7 @@ async fn handle_connection(
     trans_registry: Arc<RwLock<TransformRegistry>>,
     iam: Arc<RwLock<IAm>>,
     enclave: Arc<RwLock<Enclave>>,
+    usher_map: Arc<RwLock<UsherMap>>,
 ) -> Result<()> {
     // We use LengthDelimitedCodec so we don't have to worry about
     // TCP fragmenting our CBOR blobs.
@@ -94,6 +111,7 @@ async fn handle_connection(
             let mut trans_reg_guard = trans_registry.write().await;
             let mut iam_guard = iam.write().await;
             let mut enclave_guard = enclave.write().await;
+            let mut usher_map_guard = usher_map.write().await;
 
             for rhex in &rhex_list {
                 // Append rhex here
@@ -104,6 +122,7 @@ async fn handle_connection(
                     &mut lattice_guard,
                     &mut iam_guard,
                     &mut enclave_guard,
+                    &mut usher_map_guard,
                 )?;
                 match receive_output.0 {
                     ReceiveStatus::FailedValidation(_) => {

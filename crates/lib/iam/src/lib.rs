@@ -141,4 +141,17 @@ impl IAm {
         fs::write(path, contents)?;
         Ok(())
     }
+
+    /// # get_local(self)
+    /// Gets all the keys in I Am that are location = local
+    ///
+    pub fn get_local(&self) -> Result<Vec<[u8; 32]>> {
+        let mut output = Vec::new();
+        for entry in &self.entries {
+            if entry.1.location == IAmLocation::Local {
+                output.push(entry.0.clone());
+            }
+        }
+        Ok(output)
+    }
 }

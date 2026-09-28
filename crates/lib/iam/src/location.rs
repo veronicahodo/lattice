@@ -1,6 +1,6 @@
 use minicbor::{Decode, Encode};
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Encode, Decode, PartialEq)]
 pub enum IAmLocation {
     #[n(0)]
     None,

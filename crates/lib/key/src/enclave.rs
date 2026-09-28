@@ -1,6 +1,7 @@
 use std::fs;
 
-use anyhow::{Ok, Result};
+use anyhow::{Ok, Result, bail};
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 
 use crate::{Key, KeyInstanced};
 
@@ -148,5 +149,21 @@ impl Enclave {
             &buf,
         )?;
         Ok(key)
+    }
+
+    /// # check_map(self, i_am)
+    /// Takes a vec of pks that are local in the IAm map and confirms
+    /// they are all there. This really shouldn't be exposed anywhere
+    /// but at startup since this could be used to enumerate keys that
+    /// we have.
+    ///
+    pub fn check_map(&self, i_am: Vec<[u8; 32]>) -> Result<()> {
+        for key in i_am {
+            if !self.keys.contains(&key) {
+                let key_base64 = URL_SAFE_NO_PAD.encode(key);
+                bail!(format!("Key {} not in local enclave", key_base64));
+            }
+        }
+        Ok(())
     }
 }

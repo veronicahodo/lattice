@@ -1,7 +1,7 @@
 use anyhow::Result;
 use iam::IAm;
 use key::enclave::Enclave;
-use lattice::{Lattice, Rhex, rhex::check::CheckStatus};
+use lattice::{Lattice, Rhex, rhex::check::CheckStatus, usher::UsherMap};
 use transform::registry::TransformRegistry;
 
 use crate::{
@@ -22,6 +22,7 @@ pub fn receive(
     lattice: &mut Lattice,
     me: &mut IAm,
     enclave: &mut Enclave,
+    _usher_map: &mut UsherMap,
 ) -> Result<(ReceiveStatus, Option<Vec<Rhex>>)> {
     // Process the Rhex to see where we are
     match rhex.sigs.len() {
