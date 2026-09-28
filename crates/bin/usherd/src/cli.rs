@@ -16,32 +16,52 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     Listen {
+        /// IP address to bind the server to. Default: 0.0.0.0
+        #[arg(short, long)]
+        bind: Option<String>,
+
+        /// Port to listen on. Default: 1984
         #[arg(short, long)]
         port: Option<u16>,
 
-        #[arg(short, long)]
-        rebuild: bool,
+        /// Starts the bootstrap process and replaces the scopes,
+        /// I Am map, Usher map, and Transform Registry, basically
+        /// making it a fresh install.
+        /// Default: false
+        #[arg(long)]
+        rebuild: Option<bool>,
 
+        /// Root path. Default: ./
         #[arg(long)]
         root: Option<String>,
 
+        /// Enclave path. Default: ./keys/
         #[arg(long)]
         enclave: Option<String>,
 
+        /// Scopes path. Default: ./scopes/
         #[arg(long)]
         scopes: Option<String>,
 
+        /// I Am map path. Default: ./i-am.cbor
         #[arg(long)]
         i_am: Option<String>,
 
+        /// Transform registry path. Default: ./trans_registry.cbor
         #[arg(long)]
         transform_registry: Option<String>,
 
+        /// Usher map path. Default: ./usher_map.cbor
         #[arg(long)]
         usher_map: Option<String>,
 
+        /// Default: ./bootstrap/
         #[arg(long)]
         bootstrap: Option<String>,
+
+        /// Config file path. Default: ./config.json
+        #[arg(long, short)]
+        config: Option<String>,
     },
     Send {
         #[arg(short, long)]

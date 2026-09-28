@@ -18,7 +18,6 @@ pub mod server;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
-    let config = UsherdConfig::from_file(&cli.config)?;
     println!("*****************************************************");
     println!("* LATTICE USHER DAEMON                              *");
     println!("*****************************************************");
@@ -26,6 +25,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Bro, welcome to the dungeon lol... ⚔️🐉");
     match cli.command {
         Commands::Listen {
+            bind,
             port,
             rebuild,
             root,
@@ -35,20 +35,33 @@ async fn main() -> Result<(), Box<dyn Error>> {
             transform_registry,
             usher_map,
             bootstrap,
+            config,
         } => {
-            let config = UsherdConfig {
-                root_path: root.or(Some(config.root_path)).unwrap(),
-                enclave: enclave.or(Some(config.enclave)).unwrap(),
-                scopes: scopes.or(Some(config.scopes)).unwrap(),
-                i_am: i_am.or(Some(config.i_am)).unwrap(),
-                transform_registry: transform_registry
-                    .or(Some(config.transform_registry))
-                    .unwrap(),
-                usher_map: usher_map.or(Some(config.usher_map)).unwrap(),
-                port: port.or(Some(config.port)).unwrap(),
-                rebuild,
-                bootstrap: bootstrap.or(Some(config.bootstrap)).unwrap(),
+            // Load the config from the file specified file
+            let usherd_config = if config.is_some() {
+                UsherdConfig::from_file(&PathBuf::from(config.unwrap()))?
+            } else {
+                UsherdConfig::from_file(&PathBuf::from("./config.json"))?
             };
+
+            // Overwrite config file values with the command line values.
+            // Command line always takes precidence over the config file.
+            let config = UsherdConfig {
+                root_path: root.or(Some(usherd_config.root_path)).unwrap(),
+                enclave: enclave.or(Some(usherd_config.enclave)).unwrap(),
+                scopes: scopes.or(Some(usherd_config.scopes)).unwrap(),
+                i_am: i_am.or(Some(usherd_config.i_am)).unwrap(),
+                transform_registry: transform_registry
+                    .or(Some(usherd_config.transform_registry))
+                    .unwrap(),
+                usher_map: usher_map.or(Some(usherd_config.usher_map)).unwrap(),
+                bind: bind.or(Some(usherd_config.bind)).unwrap(),
+                port: port.or(Some(usherd_config.port)).unwrap(),
+                rebuild: rebuild.is_some(),
+                bootstrap: bootstrap.or(Some(usherd_config.bootstrap)).unwrap(),
+            };
+
+            // Run the actual server
             server::run(config).await?;
         }
         Commands::Send {

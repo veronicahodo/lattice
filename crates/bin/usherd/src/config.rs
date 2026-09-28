@@ -76,6 +76,19 @@ pub struct UsherdConfig {
     /// `./ushers.cbor`
     ///
     pub usher_map: String,
+    /// Address to bind the server to. This is pretty much just passed
+    /// to the server so we must elsewhere check to make sure we can
+    /// even bind to that address.
+    ///
+    /// ## Example
+    /// ```
+    /// config.bind = "192.168.0.1"
+    /// ```
+    ///
+    /// ## Default
+    /// `0.0.0.0` (Listen on all addresses)
+    ///
+    pub bind: String,
     /// Port number to use for listening. Pretty straight forward.
     ///
     /// ## Example
@@ -121,6 +134,11 @@ impl UsherdConfig {
             .ok()
             .and_then(|contents| serde_json::from_str(&contents).ok())
             .unwrap_or_default();
+        let bind = if file_config.bind.is_some() {
+            file_config.bind.unwrap()
+        } else {
+            "0.0.0.0".to_string()
+        };
         let root_path = if file_config.root.is_some() {
             tail_slash(file_config.root.unwrap())
         } else {
@@ -155,6 +173,7 @@ impl UsherdConfig {
             usher_map: file_config
                 .usher_map
                 .unwrap_or_else(|| "./ushers.cbor".to_string()),
+            bind,
             port: file_config.port.unwrap_or_else(|| 1984),
             rebuild: file_config.rebuild.unwrap_or_else(|| false),
             bootstrap,
@@ -180,6 +199,7 @@ struct FileConfig {
     i_am: Option<String>,
     transform_registry: Option<String>,
     usher_map: Option<String>,
+    bind: Option<String>,
     port: Option<u16>,
     rebuild: Option<bool>,
     bootstrap: Option<String>,
