@@ -58,10 +58,21 @@ pub struct UsherdConfig {
     /// ```
     ///
     /// ## Default
-    /// `./trans.registry` - *NOTE: THIS SHOULD BE CHANGED!*
+    /// `./trans.registry`
     /// Using the default creates a security risk!
     ///
     pub transform_registry: String,
+    /// Path to the stored transform packages so they can be loaded
+    ///
+    /// ## Example
+    /// ```
+    /// config.transform_store = "/path/to/transform_store".to_string();
+    /// ```
+    ///
+    /// ## Default
+    /// `./trans_store/`
+    ///
+    pub transform_store: String,
     /// Path to the usher map. This can be generated without a stored
     /// file with the `--no-usher-map` option, where it will just
     /// query for all usher lookups. This is generally taxing on the
@@ -126,6 +137,8 @@ pub struct UsherdConfig {
     /// bootstrap from a root scope provider.
     ///
     pub bootstrap: String,
+    /// Bog standard verbose command for a CLI app.
+    pub verbose: bool,
 }
 
 impl UsherdConfig {
@@ -159,6 +172,11 @@ impl UsherdConfig {
         } else {
             "./bootstrap/".to_string()
         };
+        let verbose = if file_config.verbose.is_some() {
+            file_config.verbose.unwrap()
+        } else {
+            false
+        };
 
         Ok(Self {
             root_path,
@@ -170,6 +188,9 @@ impl UsherdConfig {
             transform_registry: file_config
                 .transform_registry
                 .unwrap_or_else(|| "./trans.registry".to_string()),
+            transform_store: file_config
+                .transform_store
+                .unwrap_or_else(|| "./trans_store/".to_string()),
             usher_map: file_config
                 .usher_map
                 .unwrap_or_else(|| "./ushers.cbor".to_string()),
@@ -177,6 +198,7 @@ impl UsherdConfig {
             port: file_config.port.unwrap_or_else(|| 1984),
             rebuild: file_config.rebuild.unwrap_or_else(|| false),
             bootstrap,
+            verbose,
         })
     }
 }
@@ -198,9 +220,11 @@ struct FileConfig {
     scopes: Option<String>,
     i_am: Option<String>,
     transform_registry: Option<String>,
+    transform_store: Option<String>,
     usher_map: Option<String>,
     bind: Option<String>,
     port: Option<u16>,
     rebuild: Option<bool>,
     bootstrap: Option<String>,
+    verbose: Option<bool>,
 }

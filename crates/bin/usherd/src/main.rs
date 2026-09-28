@@ -33,9 +33,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             scopes,
             i_am,
             transform_registry,
+            transform_store,
             usher_map,
             bootstrap,
             config,
+            verbose,
         } => {
             // Load the config from the file specified file
             let usherd_config = if config.is_some() {
@@ -54,11 +56,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 transform_registry: transform_registry
                     .or(Some(usherd_config.transform_registry))
                     .unwrap(),
+                transform_store: transform_store
+                    .or(Some(usherd_config.transform_store))
+                    .unwrap(),
                 usher_map: usher_map.or(Some(usherd_config.usher_map)).unwrap(),
                 bind: bind.or(Some(usherd_config.bind)).unwrap(),
                 port: port.or(Some(usherd_config.port)).unwrap(),
                 rebuild: rebuild.is_some(),
                 bootstrap: bootstrap.or(Some(usherd_config.bootstrap)).unwrap(),
+                verbose,
             };
 
             // Run the actual server

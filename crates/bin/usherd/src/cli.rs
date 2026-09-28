@@ -51,6 +51,10 @@ pub enum Commands {
         #[arg(long)]
         transform_registry: Option<String>,
 
+        /// Transform store path. Default: ./trans_store/
+        #[arg(long)]
+        transform_store: Option<String>,
+
         /// Usher map path. Default: ./usher_map.cbor
         #[arg(long)]
         usher_map: Option<String>,
@@ -62,6 +66,10 @@ pub enum Commands {
         /// Config file path. Default: ./config.json
         #[arg(long, short)]
         config: Option<String>,
+
+        /// Verbose toogle
+        #[arg(short, long)]
+        verbose: bool,
     },
     Send {
         #[arg(short, long)]

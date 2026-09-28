@@ -21,13 +21,19 @@ pub async fn run(config: UsherdConfig) -> Result<()> {
     // Set up the connection settings
     let addr = format!("{}:{}", config.bind, config.port);
 
+    let trans_registry =
+        TransformRegistry::from_file(&config.transform_registry, &config.transform_store)?;
+
     // If rebuild=true we fire off the rebuilt bootstrap procedure,
     // otherwise we build from our existing cache
     let lattice = if config.rebuild {
         rebuild::rebuild(&config).unwrap()
     } else {
         let mut building_lattice = lattice::Lattice::new();
-        building_lattice.startup(&config.scopes)?;
+        if !config.verbose {
+            print!("Loading scopes")
+        }
+        building_lattice.build_from_disk(&config.scopes, &trans_registry, config.verbose)?;
         building_lattice
     };
     println!("🧬 Lattice is live! {} scopes loaded", lattice.scopes.len());
@@ -44,9 +50,6 @@ pub async fn run(config: UsherdConfig) -> Result<()> {
     // Check I Am against Enclave to make sure we have all the local
     // keys we need
     enclave.check_map(i_am.get_local()?)?;
-
-    // TODO: Load Transforms into registry
-    let trans_registry = TransformRegistry::new();
 
     // RwLock-ed items
     let lattice = Arc::new(RwLock::new(lattice));

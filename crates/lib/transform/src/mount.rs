@@ -8,11 +8,11 @@ impl TransformRegistry {
     /// # mount
     /// Mounts an instance of the transform into the interactions map
     ///
-    pub fn mount(&mut self, mount: String, descriptor: TransformDescriptor) -> Result<()> {
+    pub fn mount(&mut self, mount: &String, descriptor: TransformDescriptor) -> Result<()> {
         // format our main mounting string
         let mount_point = match descriptor.trigger.0.as_str() {
             "*" => mount,
-            _ => descriptor.trigger.0.replace("<mount>", &mount),
+            _ => &descriptor.trigger.0.replace("<mount>", &mount),
         };
         // Mount the appropriate action set
         let triggers = self

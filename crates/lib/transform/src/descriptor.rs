@@ -13,7 +13,8 @@ pub struct TransformDescriptor {
     // Is this transform used for validation or appending?
     pub action: DescriptorAction,
     // What's the desired mounting point for this transform?
-    // * or rhex://some.prefix.scope.<mount>/
+    // * or rhex://some.prefix.scope.<mount>/ for the first string
+    // and then the Record Type to interact with.
     pub trigger: (String, String),
     // This is indexed by scope, containing the record types observed
     // or emitted by this transform.

@@ -4,6 +4,7 @@ pub mod context;
 pub mod descriptor;
 pub mod entry;
 pub mod error;
+pub mod file;
 pub mod loaded;
 pub mod mount;
 pub mod output;

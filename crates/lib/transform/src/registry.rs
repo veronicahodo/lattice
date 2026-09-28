@@ -26,9 +26,10 @@ impl TransformRegistry {
         }
     }
 
-    pub fn add_transform(&mut self, mount: String, path: String) -> Result<()> {
+    pub fn add_transform(&mut self, name: &String, mount: &String, path: &String) -> Result<()> {
         // Load from disk first
-        let pkg = TransformPackage::disk_get(path)?;
+        let full_path = format!("{}{}.trans", path, name);
+        let pkg = TransformPackage::disk_get(full_path)?;
 
         // Verify hash
         let hash = blake3::hash(&pkg.binary);
@@ -77,8 +78,8 @@ impl TransformRegistry {
     /// # run
     /// Executes a single transform with the input already CBORed
     ///
-    pub fn run(&self, hash: [u8; 32], input: &[u8]) -> Result<Vec<u8>> {
-        let transform = self.registry.get(&hash);
+    pub fn run(&self, hash: &[u8; 32], input: &[u8]) -> Result<Vec<u8>> {
+        let transform = self.registry.get(hash);
         if transform.is_none() {
             anyhow::bail!("Transform not found");
         }

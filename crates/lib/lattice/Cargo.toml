@@ -6,4 +6,6 @@ edition = "2024"
 [dependencies]
 scope = { path = "../../lib/scope" }
 usher = { path = "../../lib/usher" }
+transform = { path = "../../lib/transform" }
 anyhow = { workspace = true }
+minicbor = { workspace = true }
