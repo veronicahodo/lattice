@@ -5,7 +5,15 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UsherdConfig {
-    /// Root path for the app itself. Default: ./
+    /// Root path for the app itself.
+    ///
+    /// ## Example
+    /// ```
+    /// config.root_path = "/usr/local/usherd/".to_string();
+    /// ```
+    ///
+    /// ## Default
+    /// `./`
     ///
     pub root_path: String,
     /// Enclave path. Technically just the path to a bunch
@@ -58,7 +66,7 @@ pub struct UsherdConfig {
     /// ```
     ///
     /// ## Default
-    /// `./trans.registry`
+    /// `./trans_reg.cbor`
     /// Using the default creates a security risk!
     ///
     pub transform_registry: String,
@@ -70,7 +78,7 @@ pub struct UsherdConfig {
     /// ```
     ///
     /// ## Default
-    /// `./trans_store/`
+    /// `./trans/`
     ///
     pub transform_store: String,
     /// Path to the usher map. This can be generated without a stored
@@ -84,7 +92,7 @@ pub struct UsherdConfig {
     /// ```
     ///
     /// ## Default
-    /// `./ushers.cbor`
+    /// `./usher_map.cbor`
     ///
     pub usher_map: String,
     /// Address to bind the server to. This is pretty much just passed
@@ -147,11 +155,6 @@ impl UsherdConfig {
             .ok()
             .and_then(|contents| serde_json::from_str(&contents).ok())
             .unwrap_or_default();
-        let bind = if file_config.bind.is_some() {
-            file_config.bind.unwrap()
-        } else {
-            "0.0.0.0".to_string()
-        };
         let root_path = if file_config.root.is_some() {
             tail_slash(file_config.root.unwrap())
         } else {
@@ -167,37 +170,79 @@ impl UsherdConfig {
         } else {
             "./scopes/".to_string()
         };
+        let i_am = file_config
+            .i_am
+            .unwrap_or_else(|| "./i_am.cbor".to_string());
+        let transform_registry = file_config
+            .transform_registry
+            .unwrap_or_else(|| "./trans_reg.cbor".to_string());
+        let transform_store = if file_config.transform_store.is_some() {
+            tail_slash(file_config.transform_store.unwrap())
+        } else {
+            "./trans/".to_string()
+        };
+        let usher_map = file_config
+            .usher_map
+            .unwrap_or_else(|| "./usher_map.cbor".to_string());
+        let bind = file_config.bind.unwrap_or_else(|| "0.0.0.0".to_string());
+        let port = file_config.port.unwrap_or_else(|| 1984);
+        let rebuild = file_config.rebuild.unwrap_or_else(|| false);
         let bootstrap = if file_config.bootstrap.is_some() {
             tail_slash(file_config.bootstrap.unwrap())
         } else {
             "./bootstrap/".to_string()
         };
-        let verbose = if file_config.verbose.is_some() {
-            file_config.verbose.unwrap()
-        } else {
-            false
-        };
+        let verbose = file_config.verbose.unwrap_or_else(|| false);
 
         Ok(Self {
             root_path,
             enclave,
             scopes,
-            i_am: file_config
-                .i_am
-                .unwrap_or_else(|| "./i-am.cbor".to_string()),
-            transform_registry: file_config
-                .transform_registry
-                .unwrap_or_else(|| "./trans.registry".to_string()),
-            transform_store: file_config
-                .transform_store
-                .unwrap_or_else(|| "./trans_store/".to_string()),
-            usher_map: file_config
-                .usher_map
-                .unwrap_or_else(|| "./ushers.cbor".to_string()),
+            i_am,
+            transform_registry,
+            transform_store,
+            usher_map,
             bind,
-            port: file_config.port.unwrap_or_else(|| 1984),
-            rebuild: file_config.rebuild.unwrap_or_else(|| false),
+            port,
+            rebuild,
             bootstrap,
+            verbose,
+        })
+    }
+
+    /// # merge_config(...)
+    ///
+    /// Merge CLI and file config settings
+    ///
+    pub fn merge_config(
+        self,
+        root: Option<String>,
+        enclave: Option<String>,
+        scopes: Option<String>,
+        i_am: Option<String>,
+        transform_registry: Option<String>,
+        transform_store: Option<String>,
+        usher_map: Option<String>,
+        bind: Option<String>,
+        port: Option<u16>,
+        rebuild: Option<bool>,
+        bootstrap: Option<String>,
+        verbose: bool,
+    ) -> Result<Self> {
+        Ok(UsherdConfig {
+            root_path: root.or(Some(self.root_path)).unwrap(),
+            enclave: enclave.or(Some(self.enclave)).unwrap(),
+            scopes: scopes.or(Some(self.scopes)).unwrap(),
+            i_am: i_am.or(Some(self.i_am)).unwrap(),
+            transform_registry: transform_registry
+                .or(Some(self.transform_registry))
+                .unwrap(),
+            transform_store: transform_store.or(Some(self.transform_store)).unwrap(),
+            usher_map: usher_map.or(Some(self.usher_map)).unwrap(),
+            bind: bind.or(Some(self.bind)).unwrap(),
+            port: port.or(Some(self.port)).unwrap(),
+            rebuild: rebuild.is_some(),
+            bootstrap: bootstrap.or(Some(self.bootstrap)).unwrap(),
             verbose,
         })
     }

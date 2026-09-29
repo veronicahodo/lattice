@@ -48,24 +48,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             // Overwrite config file values with the command line values.
             // Command line always takes precidence over the config file.
-            let config = UsherdConfig {
-                root_path: root.or(Some(usherd_config.root_path)).unwrap(),
-                enclave: enclave.or(Some(usherd_config.enclave)).unwrap(),
-                scopes: scopes.or(Some(usherd_config.scopes)).unwrap(),
-                i_am: i_am.or(Some(usherd_config.i_am)).unwrap(),
-                transform_registry: transform_registry
-                    .or(Some(usherd_config.transform_registry))
-                    .unwrap(),
-                transform_store: transform_store
-                    .or(Some(usherd_config.transform_store))
-                    .unwrap(),
-                usher_map: usher_map.or(Some(usherd_config.usher_map)).unwrap(),
-                bind: bind.or(Some(usherd_config.bind)).unwrap(),
-                port: port.or(Some(usherd_config.port)).unwrap(),
-                rebuild: rebuild.is_some(),
-                bootstrap: bootstrap.or(Some(usherd_config.bootstrap)).unwrap(),
+            let config = usherd_config.merge_config(
+                root,
+                enclave,
+                scopes,
+                i_am,
+                transform_registry,
+                transform_store,
+                usher_map,
+                bind,
+                port,
+                rebuild,
+                bootstrap,
                 verbose,
-            };
+            )?;
 
             // Run the actual server
             server::run(config).await?;
