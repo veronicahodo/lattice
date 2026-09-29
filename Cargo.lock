@@ -588,6 +588,7 @@ dependencies = [
  "scope",
  "transform",
  "usher",
+ "util",
 ]
 
 [[package]]
@@ -1140,6 +1141,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "transform",
+ "util",
 ]
 
 [[package]]

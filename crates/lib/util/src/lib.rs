@@ -15,3 +15,15 @@ pub fn value_to_string_arr(val: Value) -> Result<Vec<String>> {
         .unwrap_or_default();
     Ok(foo)
 }
+
+pub fn verbose_print(print: String, verbose: bool) {
+    if verbose {
+        print!("{}", print);
+    }
+}
+
+pub fn verbose_println(print: String, verbose: bool) {
+    if verbose {
+        println!("{}", print);
+    }
+}

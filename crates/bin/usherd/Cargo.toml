@@ -21,3 +21,4 @@ minicbor = { workspace = true }
 blake3 = { workspace = true }
 iam = { path = "../../lib/iam" }
 rand = { workspace = true }
+util = { path = "../../lib/util" }

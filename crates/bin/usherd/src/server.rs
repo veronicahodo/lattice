@@ -10,6 +10,7 @@ use lattice::{
 };
 use tokio::sync::RwLock;
 use transform::registry::TransformRegistry;
+use util::{verbose_print, verbose_println};
 
 use crate::{
     config::UsherdConfig,
@@ -22,27 +23,23 @@ pub async fn run(config: UsherdConfig) -> Result<()> {
     let addr = format!("{}:{}", config.bind, config.port);
 
     // Load the transform registry from file
-    if config.verbose {
-        print!(
-            "Loading transform registry from {}...",
+    verbose_print(
+        format!(
+            "Loading transform registry at {}...",
             config.transform_registry
-        );
-    }
-
+        ),
+        config.verbose,
+    );
     // If the registry file doesn't exist, create it.
     if !std::fs::exists(&config.transform_registry)? {
-        if config.verbose {
-            print!("rebuilding...");
-        }
+        verbose_print("rebuilding...".to_string(), config.verbose);
         let tr = TransformRegistry::new();
         tr.to_file(&config.transform_registry)?;
     }
 
     let trans_registry =
         TransformRegistry::from_file(&config.transform_registry, &config.transform_store)?;
-    if config.verbose {
-        println!(" done!");
-    }
+    verbose_println("done!".to_string(), config.verbose);
 
     // If rebuild=true we fire off the rebuilt bootstrap procedure,
     // otherwise we build from our existing cache

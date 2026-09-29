@@ -1,49 +1,20 @@
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Result, bail};
 use scope::{Scope, rhex::Rhex};
 use transform::registry::TransformRegistry;
+use util::verbose_println;
 
 use crate::Lattice;
 
 impl Lattice {
-    pub fn startup(&mut self, path: &String) -> Result<()> {
-        let scopes_dir_entries = std::fs::read_dir(path)?;
-        for entry in scopes_dir_entries {
-            let entry = entry?;
-            // skip if its a dir
-            if entry.path().is_dir() || !entry.path().ends_with(".rchain") {
-                continue;
-            }
-            print!("\t🌐 Loading scope: {}...", entry.file_name().display());
-            let scope_path = entry.path();
-            let scope_path = scope_path
-                .file_prefix()
-                .ok_or(anyhow!("No prefix"))?
-                .to_str()
-                .ok_or(anyhow!("Failed to convert prefix"))?;
-            let mut scope = Scope::new(&scope_path.to_string(), [0; 32]);
-            let _scope_rhex = scope.slurp_scope(
-                entry
-                    .file_name()
-                    .to_str()
-                    .ok_or(anyhow!("Couldn't convert filename"))?
-                    .to_string(),
-            )?;
-            self.add_scope(&scope);
-            println!("done");
-        }
-        Ok(())
-    }
-
     pub fn build_from_disk(
         &mut self,
         path: &String,
         trans_reg: &TransformRegistry,
         verbose: bool,
     ) -> Result<()> {
-        if verbose {
-            println!("Reading scopes in {}...", path);
-        }
+        print!("Loading scopes from {}", path);
         let scope_dir_entries = std::fs::read_dir(path)?;
+        verbose_println("".to_string(), verbose);
         for entry in scope_dir_entries {
             // Handle errs first
             if entry.is_err() {
@@ -74,9 +45,7 @@ impl Lattice {
                 verbose,
             )?;
             self.scopes.insert(scope.name.clone(), scope);
-            if verbose {
-                println!("done!");
-            }
+            verbose_println("done!".to_string(), verbose);
         }
         Ok(())
     }
