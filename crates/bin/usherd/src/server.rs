@@ -6,7 +6,7 @@ use iam::IAm;
 use key::enclave::Enclave;
 use lattice::{
     Lattice, Rhex,
-    usher::{self, UsherMap},
+    usher::{self, UsherMap, map},
 };
 use tokio::sync::RwLock;
 use transform::registry::TransformRegistry;
@@ -21,12 +21,33 @@ pub async fn run(config: UsherdConfig) -> Result<()> {
     // Set up the connection settings
     let addr = format!("{}:{}", config.bind, config.port);
 
+    // Load the transform registry from file
+    if config.verbose {
+        print!(
+            "Loading transform registry from {}...",
+            config.transform_registry
+        );
+    }
+
+    // If the registry file doesn't exist, create it.
+    if !std::fs::exists(&config.transform_registry)? {
+        if config.verbose {
+            print!("rebuilding...");
+        }
+        let tr = TransformRegistry::new();
+        tr.to_file(&config.transform_registry)?;
+    }
+
     let trans_registry =
         TransformRegistry::from_file(&config.transform_registry, &config.transform_store)?;
+    if config.verbose {
+        println!(" done!");
+    }
 
     // If rebuild=true we fire off the rebuilt bootstrap procedure,
     // otherwise we build from our existing cache
     let lattice = if config.rebuild {
+        println!("Starting rebuild from bootstrap at {}...", config.bootstrap);
         rebuild::rebuild(&config).unwrap()
     } else {
         let mut building_lattice = lattice::Lattice::new();
@@ -39,17 +60,57 @@ pub async fn run(config: UsherdConfig) -> Result<()> {
     println!("🧬 Lattice is live! {} scopes loaded", lattice.scopes.len());
 
     // Load the cached Usher Map
+    if config.verbose {
+        print!("Loading usher map...");
+    }
+
+    if !std::fs::exists(&config.usher_map)? {
+        if config.verbose {
+            print!("rebuilding...");
+        }
+        let um = UsherMap::new();
+        map::disk_to(&config.usher_map, um);
+    }
     let usher_map = usher::map::disk_from(&config.usher_map);
+    if config.verbose {
+        println!(" done!");
+    }
+
     // Load I Am entries
+    if config.verbose {
+        print!("Loading I Am...");
+    }
+    if !std::fs::exists(&config.i_am)? {
+        if config.verbose {
+            print!("rebuilding...");
+        }
+        let i = IAm::new();
+        i.disk_to(&config.i_am)?;
+    }
     let i_am = IAm::disk_from(&config.i_am)?;
+    if config.verbose {
+        println!(" done!");
+    }
 
     // Load enclave and populate it
+    if config.verbose {
+        print!("Enclave loading");
+    }
     let mut enclave = Enclave::new(Some(config.enclave.clone()));
     enclave.populate()?;
+    if config.verbose {
+        println!(" done! Loaded {} keys", enclave.keys.len());
+    }
 
     // Check I Am against Enclave to make sure we have all the local
     // keys we need
+    if config.verbose {
+        print!("Checking I Am against Enclave...")
+    }
     enclave.check_map(i_am.get_local()?)?;
+    if config.verbose {
+        println!(" done!");
+    }
 
     // RwLock-ed items
     let lattice = Arc::new(RwLock::new(lattice));

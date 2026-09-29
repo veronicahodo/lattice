@@ -29,7 +29,7 @@ impl Enclave {
     ///
     pub fn disk_get(&self, pk: [u8; 32]) -> Result<Key> {
         let data = std::fs::read(format!("{}/{}.key", self.path, hex::encode(&pk))).unwrap();
-        let key = Key::from_vec(&data);
+        let key = Key::from_vec(&data)?;
         Ok(key)
     }
 

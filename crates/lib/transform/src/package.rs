@@ -1,14 +1,17 @@
 use std::fs;
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
+use minicbor::{Decode, Encode};
 
 use crate::descriptor::TransformDescriptor;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Encode, Decode)]
 pub struct TransformPackage {
+    #[n(0)]
     pub magic: [u8; 8],
+    #[n(1)]
     pub descriptor: TransformDescriptor,
+    #[n(2)]
     pub binary: Vec<u8>,
 }
 
@@ -23,7 +26,7 @@ impl TransformPackage {
 
     pub fn disk_get(path: String) -> Result<Self> {
         let file_bin = fs::read(path)?;
-        let pkg: TransformPackage = serde_cbor::from_slice(&file_bin)?;
+        let pkg: TransformPackage = minicbor::decode(&file_bin)?;
 
         Ok(pkg)
     }

@@ -28,3 +28,5 @@ target
 *.key
 # Don't want the actual cached *.rhex files in the repo either
 *.rhex
+# Ignore the testing dir
+/testing

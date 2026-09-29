@@ -155,8 +155,8 @@ impl Key {
     ///
     /// Creates a key structure from the Vec<u8>
     ///
-    pub fn from_vec(data: &Vec<u8>) -> Self {
-        minicbor::decode(data).unwrap()
+    pub fn from_vec(data: &Vec<u8>) -> Result<Self> {
+        Ok(minicbor::decode(data).unwrap())
     }
 
     /// # `disk_get(path)`

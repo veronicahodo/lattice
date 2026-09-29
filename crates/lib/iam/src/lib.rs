@@ -132,9 +132,9 @@ impl IAm {
     /// # disk_to(me, path)
     /// Saves the entries map to a file.
     ///
-    pub fn disk_to(me: &IAm, path: &String) -> Result<()> {
+    pub fn disk_to(&self, path: &String) -> Result<()> {
         let mut iam_vec = Vec::new();
-        for (_, member) in me.entries.clone() {
+        for (_, member) in self.entries.clone() {
             iam_vec.push(member.clone());
         }
         let contents = minicbor::to_vec(iam_vec)?;

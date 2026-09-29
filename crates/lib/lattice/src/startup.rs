@@ -40,6 +40,9 @@ impl Lattice {
         trans_reg: &TransformRegistry,
         verbose: bool,
     ) -> Result<()> {
+        if verbose {
+            println!("Reading scopes in {}...", path);
+        }
         let scope_dir_entries = std::fs::read_dir(path)?;
         for entry in scope_dir_entries {
             // Handle errs first

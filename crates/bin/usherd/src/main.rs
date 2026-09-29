@@ -40,11 +40,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
             verbose,
         } => {
             // Load the config from the file specified file
-            let usherd_config = if config.is_some() {
-                UsherdConfig::from_file(&PathBuf::from(config.unwrap()))?
+            let config = if config.is_some() {
+                config.unwrap()
             } else {
-                UsherdConfig::from_file(&PathBuf::from("./config.json"))?
+                "./config.json".to_string()
             };
+            if verbose {
+                print!("Loading config file {}... ", config);
+            }
+            let usherd_config = UsherdConfig::from_file(&PathBuf::from(config))?;
 
             // Overwrite config file values with the command line values.
             // Command line always takes precidence over the config file.
@@ -62,6 +66,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 bootstrap,
                 verbose,
             )?;
+            if verbose {
+                println!("done!");
+            }
 
             // Run the actual server
             server::run(config).await?;
