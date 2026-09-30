@@ -20,7 +20,7 @@ pub fn receive(
     rhex: &Rhex,
     trans_registry: &mut TransformRegistry,
     lattice: &mut Lattice,
-    me: &mut IAm,
+    iam: &mut IAm,
     enclave: &mut Enclave,
     _usher_map: &mut UsherMap,
 ) -> Result<(ReceiveStatus, Option<Vec<Rhex>>)> {
@@ -34,7 +34,7 @@ pub fn receive(
         // and context creation. Returns a signature payload in the outputting
         // R⬢
         1 => {
-            let (status, outputs) = recv_one_sig(rhex, enclave, lattice, me, trans_registry)?;
+            let (status, outputs) = recv_one_sig(rhex, enclave, lattice, iam, trans_registry)?;
             Ok((status, outputs))
         }
         // Two sigs = We are looking for quorum. We figure out who we are
@@ -42,7 +42,7 @@ pub fn receive(
         // the signature payload.
         2 => {
             let (status, output) =
-                recv_two_sigs(rhex, config, lattice, enclave, me, trans_registry)?;
+                recv_two_sigs(rhex, config, lattice, enclave, iam, trans_registry)?;
             Ok((status, output))
         }
         3.. => {
