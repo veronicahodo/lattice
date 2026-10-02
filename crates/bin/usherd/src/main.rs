@@ -5,6 +5,7 @@ use crate::{
 use base64::{Engine as _, engine};
 use clap::Parser;
 use std::{error::Error, path::PathBuf, str::FromStr};
+use util::{verbose_print, verbose_println};
 
 pub mod cli;
 pub mod client;
@@ -37,6 +38,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             usher_map,
             bootstrap,
             config,
+            observer,
             verbose,
         } => {
             // Load the config from the file specified file
@@ -45,9 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             } else {
                 "./config.json".to_string()
             };
-            if verbose {
-                print!("Loading config file {}... ", config);
-            }
+            verbose_print(format!("Loading config file {}... ", config), verbose);
             let usherd_config = UsherdConfig::from_file(&PathBuf::from(config))?;
 
             // Overwrite config file values with the command line values.
@@ -64,11 +64,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 port,
                 rebuild,
                 bootstrap,
+                observer,
                 verbose,
             )?;
-            if verbose {
-                println!("done!");
-            }
+            verbose_println("done!".to_string(), verbose);
 
             // Run the actual server
             server::run(config).await?;

@@ -7,14 +7,21 @@ use lattice::{
         check::CheckStatus,
         context::RhexContext,
         data::RhexData,
-        signature::{RhexSignature, RhexSignatureType},
+        signature::{AgileKey, RhexSigAlgo::Ed25519, RhexSignature, RhexSignatureType},
     },
     usher::UsherSigResponse,
 };
 use time::MicroMarks;
 use transform::{descriptor::DescriptorAction, registry::TransformRegistry};
 
-use crate::{firing, receive::ReceiveStatus};
+use crate::{
+    firing,
+    receive::{
+        ReceiveStatus,
+        sign_out::sign_out,
+        time_go::{TimeGoResponse, time_go, time_go_from_data},
+    },
+};
 
 /// # recv_one_sig(...)
 ///
@@ -40,10 +47,51 @@ pub fn recv_one_sig(
     let mut intent_to_sign = Vec::new();
     out_rhex.intent = rhex.intent.clone();
     out_rhex.sigs = rhex.sigs.clone();
+    let time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64;
+    let time = time.as_micromarks();
 
     // Is the only sig an author signature
     if rhex.sigs[0].t != RhexSignatureType::Author {
         status = ReceiveStatus::FailedValidation(CheckStatus::SignatureInvalid(0));
+    }
+
+    // Fall out early for `time:go` R⬢. This is literally the worst
+    // because this is the beginning of making all directive/query
+    // `rt` requires hardcoding here. 🤮
+    if rhex.intent.rt.as_str() == "time:go" {
+        let hash = time_go_from_data(RhexData::from_vec(&rhex.data)?)?;
+        let sig = time_go(enclave, &rhex.intent.usher, &hash, &time)?;
+        let mut rout = Rhex::new();
+        rout.intent.rt = "time:response".to_string();
+        rout.intent.author = rhex.intent.usher;
+        rout.intent.usher = rhex.intent.author;
+        rout.intent.schema = Some("rhex://schema.time.response".to_string());
+        let response = TimeGoResponse {
+            time,
+            sig: RhexSignature {
+                pk: AgileKey {
+                    algo: Ed25519,
+                    key_bytes: rhex.intent.usher.try_into().unwrap(),
+                },
+                sig: sig.to_vec(),
+                t: RhexSignatureType::Observer(time),
+            },
+        };
+        let data = RhexData::Binary(response.to_vec()?);
+        rout.intent.data_hash = Some(data.get_hash());
+        let mut rout = sign_out(
+            enclave,
+            rout.intent,
+            &AgileKey {
+                algo: Ed25519,
+                key_bytes: rhex.intent.usher.try_into().unwrap(),
+            },
+        )?;
+        rout.data = data.to_vec()?;
+        return Ok((ReceiveStatus::Success, Some(vec![rout])));
     }
 
     // Am I the usher in question?
@@ -98,8 +146,11 @@ pub fn recv_one_sig(
         &out_rhex.get_hash(RhexSignatureType::Usher),
     )?;
     let rhex_sig = RhexSignature {
-        pk: rhex.intent.usher.clone(),
-        sig,
+        pk: AgileKey {
+            algo: Ed25519,
+            key_bytes: rhex.intent.usher.try_into().unwrap(),
+        },
+        sig: sig.to_vec(),
         t: RhexSignatureType::Usher,
     };
 
@@ -125,8 +176,11 @@ pub fn recv_one_sig(
         &out_rhex.get_hash(RhexSignatureType::Author),
     )?;
     out_rhex.sigs.push(RhexSignature {
-        pk: rhex.intent.usher.clone(),
-        sig,
+        pk: AgileKey {
+            algo: Ed25519,
+            key_bytes: rhex.intent.usher.try_into().unwrap(),
+        },
+        sig: sig.to_vec(),
         t: RhexSignatureType::Author,
     });
 

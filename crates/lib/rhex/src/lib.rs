@@ -29,9 +29,9 @@ pub mod chain;
 pub mod check;
 pub mod context;
 pub mod data;
-pub mod data_bytes;
 pub mod intent;
 pub mod print;
+pub mod respond;
 pub mod signature;
 pub mod validate;
 
@@ -53,6 +53,8 @@ pub struct Rhex {
 
 impl Rhex {
     pub const MAGIC: [u8; 6] = *b"RHEX\x00\x03";
+    pub const MAX_DATA: usize = 1024;
+    pub const MAX_OVERALL: usize = 4096;
 
     pub fn new() -> Self {
         Self {
@@ -83,11 +85,11 @@ impl Rhex {
             RhexSignatureType::Quorum(t) | RhexSignatureType::Observer(t) => {
                 let mut hasher = blake3::Hasher::new();
                 hasher.update(b"RHEX_OBSERVED_SIG_0");
+                hasher.update(&self.sigs[0].sig);
+                hasher.update(&self.sigs[1].sig);
                 // This is what google said to do, I feel like it should
                 // be little endian but what do I know?
                 hasher.update(&t.to_be_bytes());
-                hasher.update(&self.sigs[0].sig);
-                hasher.update(&self.sigs[1].sig);
                 hasher.finalize().into()
             }
             RhexSignatureType::Other => unimplemented!(),
@@ -145,7 +147,7 @@ impl Rhex {
     pub fn validate(&self) -> bool {
         let mut valid = true;
         for i in 0..self.sigs.len() {
-            let sig_ok = self.validate_sig(self.sigs[i].t.clone(), i);
+            let sig_ok = self.validate_sig(i);
             valid = valid && sig_ok;
         }
         valid = valid && self.validate_curr();

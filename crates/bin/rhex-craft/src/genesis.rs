@@ -6,7 +6,7 @@ use key::enclave::Enclave;
 use scope::rhex::{
     self,
     data::RhexData,
-    signature::{RhexSignature, RhexSignatureType},
+    signature::{AgileKey, RhexSigAlgo::Ed25519, RhexSignature, RhexSignatureType},
 };
 use serde_json::json;
 
@@ -18,7 +18,7 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     let mut rhex = rhex::Rhex::new();
     //let key = key::Key::disk_get(&key);
     let key_conv: [u8; 32] = URL_SAFE_NO_PAD.decode(key)?.try_into().unwrap();
-    let mut enclave = Enclave::new(Some(enclave_path));
+    let mut enclave = Enclave::new(Some(&enclave_path));
     let _ = enclave.populate();
     let binary_vec = vec![key_conv.clone()];
     let json = json!({
@@ -51,19 +51,32 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     rhex.context.s = None;
 
     // Sign it like the dirty hoe we are.
+    let key = AgileKey {
+        algo: Ed25519,
+        key_bytes: key_conv.try_into().unwrap(),
+    };
     rhex.sigs.push(RhexSignature {
-        pk: key_conv.clone(),
-        sig: enclave.sign(&key_conv, &rhex.get_hash(RhexSignatureType::Author))?,
+        pk: key.clone(),
+        sig: enclave
+            .sign(&key_conv, &rhex.get_hash(RhexSignatureType::Author))?
+            .try_into()
+            .unwrap(),
         t: RhexSignatureType::Author,
     });
     rhex.sigs.push(RhexSignature {
-        pk: key_conv.clone(),
-        sig: enclave.sign(&key_conv, &rhex.get_hash(RhexSignatureType::Usher))?,
+        pk: key.clone(),
+        sig: enclave
+            .sign(&key_conv, &rhex.get_hash(RhexSignatureType::Usher))?
+            .try_into()
+            .unwrap(),
         t: RhexSignatureType::Usher,
     });
     rhex.sigs.push(RhexSignature {
-        pk: key_conv.clone(),
-        sig: enclave.sign(&key_conv, &rhex.get_hash(RhexSignatureType::Quorum(0)))?,
+        pk: key.clone(),
+        sig: enclave
+            .sign(&key_conv, &rhex.get_hash(RhexSignatureType::Quorum(0)))?
+            .try_into()
+            .unwrap(),
         t: RhexSignatureType::Quorum(0),
     });
 

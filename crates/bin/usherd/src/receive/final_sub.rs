@@ -8,7 +8,7 @@ use lattice::{
     rhex::{
         check::CheckStatus,
         data::RhexData,
-        signature::{RhexSignature, RhexSignatureType},
+        signature::{AgileKey, RhexSigAlgo::Ed25519, RhexSignature, RhexSignatureType},
     },
 };
 use serde_json::json;
@@ -97,8 +97,11 @@ pub fn recv_three_plus_sigs(
         &response.get_hash(RhexSignatureType::Author),
     )?;
     let sig = RhexSignature {
-        pk: response.intent.author.clone(),
-        sig: author_sig,
+        pk: AgileKey {
+            algo: Ed25519,
+            key_bytes: response.intent.author.try_into().unwrap(),
+        },
+        sig: author_sig.to_vec(),
         t: RhexSignatureType::Author,
     };
     response.sigs.push(sig);

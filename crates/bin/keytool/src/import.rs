@@ -7,7 +7,7 @@ pub fn import(
     time: Option<u64>,
     expires: Option<u64>,
 ) {
-    let mut enclave = key::enclave::Enclave::new(Some(enclave_path.clone()));
+    let mut enclave = key::enclave::Enclave::new(Some(&enclave_path.clone()));
     let _ = enclave.populate();
     let secret_key = URL_SAFE_NO_PAD.decode(input).unwrap();
     let key = enclave

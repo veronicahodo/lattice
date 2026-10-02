@@ -15,11 +15,12 @@ impl Enclave {
     /// Creates a new enclave using the path either set or assumed
     /// to be `./keys`.
     ///
-    pub fn new(path: Option<String>) -> Self {
-        let path = path.unwrap_or("./keys".to_string());
+    pub fn new(path: Option<&String>) -> Self {
+        let default_path = "./keys/".to_string();
+        let path = path.clone().unwrap_or(&default_path);
 
         Self {
-            path,
+            path: path.clone(),
             keys: Vec::new(),
         }
     }

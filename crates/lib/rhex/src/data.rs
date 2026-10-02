@@ -55,8 +55,8 @@ impl RhexData {
         Ok(minicbor::to_vec(self)?)
     }
 
-    pub fn from_vec(data: Vec<u8>) -> Result<Self> {
-        Ok(minicbor::decode(&data)?)
+    pub fn from_vec(data: &Vec<u8>) -> Result<Self> {
+        Ok(minicbor::decode(data)?)
     }
 
     pub fn get_hash(&self) -> [u8; 32] {

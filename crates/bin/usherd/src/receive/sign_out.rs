@@ -4,7 +4,7 @@ use lattice::{
     Rhex,
     rhex::{
         intent::RhexIntent,
-        signature::{RhexSignature, RhexSignatureType},
+        signature::{AgileKey, RhexSignature, RhexSignatureType},
     },
 };
 
@@ -13,21 +13,18 @@ use lattice::{
 /// Basically takes a Vec of RhexIntent and signs over all of them
 /// with the same key, and then returns the author-signed Rhex
 ///
-pub fn sign_out(enclave: &Enclave, intents: Vec<RhexIntent>, pk: &[u8; 32]) -> Result<Vec<Rhex>> {
-    let mut output = Vec::new();
-    for i in intents {
-        let mut r = Rhex::new();
-        r.intent = i;
-        let sig = enclave.sign(pk, &r.get_hash(RhexSignatureType::Author));
-        if sig.is_ok() {
-            r.sigs.push(RhexSignature {
-                pk: pk.clone(),
-                sig: sig.unwrap(),
-                t: RhexSignatureType::Author,
-            });
-            output.push(r);
-        }
-    }
+pub fn sign_out(enclave: &Enclave, intent: RhexIntent, pk: &AgileKey) -> Result<Rhex> {
+    let mut r = Rhex::new();
+    r.intent = intent;
+    let sig = enclave.sign(
+        &pk.key_bytes.clone().try_into().unwrap(),
+        &r.get_hash(RhexSignatureType::Author),
+    )?;
+    r.sigs.push(RhexSignature {
+        pk: pk.clone(),
+        sig: sig.to_vec(),
+        t: RhexSignatureType::Author,
+    });
 
-    Ok(output)
+    Ok(r)
 }

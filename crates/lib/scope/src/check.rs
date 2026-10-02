@@ -99,7 +99,9 @@ impl Scope {
                     if (time - rhex.context.at) < window {
                         match sig.t {
                             Quorum(_) => {
-                                if quorum_ushers.contains(&sig.pk) {
+                                if quorum_ushers
+                                    .contains(&sig.pk.key_bytes.clone().try_into().unwrap())
+                                {
                                     quorum_sigs.push(sig.clone());
                                 }
                             }

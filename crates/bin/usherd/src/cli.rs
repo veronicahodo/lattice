@@ -16,6 +16,10 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     Listen {
+        /// Config file path. Default: ./config.json
+        #[arg(long, short)]
+        config: Option<String>,
+
         /// IP address to bind the server to. Default: 0.0.0.0
         #[arg(short, long)]
         bind: Option<String>,
@@ -63,9 +67,9 @@ pub enum Commands {
         #[arg(long)]
         bootstrap: Option<String>,
 
-        /// Config file path. Default: ./config.json
-        #[arg(long, short)]
-        config: Option<String>,
+        /// Observer toggle
+        #[arg(short, long)]
+        observer: bool,
 
         /// Verbose toogle
         #[arg(short, long)]

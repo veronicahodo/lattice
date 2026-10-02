@@ -145,6 +145,24 @@ pub struct UsherdConfig {
     /// bootstrap from a root scope provider.
     ///
     pub bootstrap: String,
+    /// Are we also an Observer? Observers provide a simple signing
+    /// over H(author_sig | usher_sig | time.to_be_bytes()), creating
+    /// a lightweight observation of the hash at a specific time.
+    ///
+    /// Since the Observer has no idea what the sigs cover, it's a blind
+    /// faith actor providing only the time it knows, which allows us
+    /// to create deltas across the lattice for what time it actually
+    /// is.
+    ///
+    /// # Example
+    /// ```
+    /// config.observer = true
+    /// ```
+    ///
+    /// ## Default
+    /// `false` - we don't assume we have the bandwidth to do so.
+    ///
+    pub observer: bool,
     /// Bog standard verbose command for a CLI app.
     pub verbose: bool,
 }
@@ -192,6 +210,7 @@ impl UsherdConfig {
         } else {
             "./bootstrap/".to_string()
         };
+        let observer = file_config.observer.unwrap_or_else(|| false);
         let verbose = file_config.verbose.unwrap_or_else(|| false);
 
         Ok(Self {
@@ -206,6 +225,7 @@ impl UsherdConfig {
             port,
             rebuild,
             bootstrap,
+            observer,
             verbose,
         })
     }
@@ -227,6 +247,7 @@ impl UsherdConfig {
         port: Option<u16>,
         rebuild: Option<bool>,
         bootstrap: Option<String>,
+        observer: bool,
         verbose: bool,
     ) -> Result<Self> {
         Ok(UsherdConfig {
@@ -243,6 +264,7 @@ impl UsherdConfig {
             port: port.or(Some(self.port)).unwrap(),
             rebuild: rebuild.is_some(),
             bootstrap: bootstrap.or(Some(self.bootstrap)).unwrap(),
+            observer,
             verbose,
         })
     }
@@ -271,5 +293,6 @@ struct FileConfig {
     port: Option<u16>,
     rebuild: Option<bool>,
     bootstrap: Option<String>,
+    observer: Option<bool>,
     verbose: Option<bool>,
 }

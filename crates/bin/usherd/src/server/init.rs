@@ -74,7 +74,7 @@ pub fn init_enclave(config: &UsherdConfig, iam: &IAm) -> Result<Enclave> {
         print!("Enclave loading...");
     }
 
-    let mut enclave = Enclave::new(Some(config.enclave.clone()));
+    let mut enclave = Enclave::new(Some(&config.enclave.clone()));
     enclave.populate()?;
 
     if config.verbose {

@@ -98,6 +98,11 @@ async fn handle_connection(
         println!("Received {} items", rhex_list.len());
 
         {
+            // Set the locks. Ideally we should kick through this fast, unless
+            // theres a bunch of transforms/a few slow transforms.
+            //
+            // ...fuck. I just realized when querying for remote data we're
+            // gonna be stalled out here. Bruh!
             let mut lattice_guard = state.lattice.write().await;
             let mut trans_registry_guard = state.trans_registry.write().await;
             let mut iam_guard = state.iam.write().await;

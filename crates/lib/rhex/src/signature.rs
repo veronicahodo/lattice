@@ -3,11 +3,25 @@ use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use minicbor::{Decode, Encode};
 
 #[derive(Debug, Clone, Copy, Encode, Decode)]
+pub enum RhexSigAlgo {
+    #[n(0)]
+    Ed25519,
+}
+
+#[derive(Debug, Clone, Encode, Decode)]
+pub struct AgileKey {
+    #[n(0)]
+    pub algo: RhexSigAlgo,
+    #[n(1)]
+    pub key_bytes: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Encode, Decode)]
 pub struct RhexSignature {
     #[n(0)]
-    pub pk: [u8; 32],
+    pub pk: AgileKey,
     #[n(1)]
-    pub sig: [u8; 64],
+    pub sig: Vec<u8>,
     #[n(2)]
     pub t: RhexSignatureType,
 }
@@ -28,8 +42,8 @@ pub enum RhexSignatureType {
 
 impl RhexSignature {
     pub fn print(&self) -> String {
-        let pk = URL_SAFE_NO_PAD.encode(self.pk);
-        let sig = URL_SAFE_NO_PAD.encode(self.sig);
+        let pk = URL_SAFE_NO_PAD.encode(self.pk.key_bytes.clone());
+        let sig = URL_SAFE_NO_PAD.encode(self.sig.clone());
         let t = match self.t {
             RhexSignatureType::Author => &"Author".to_string(),
             RhexSignatureType::Usher => &"Usher".to_string(),

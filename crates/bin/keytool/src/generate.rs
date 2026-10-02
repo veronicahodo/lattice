@@ -8,7 +8,7 @@ pub fn generate(
     expires: Option<u64>,
 ) -> Result<()> {
     println!("Generating key...");
-    let mut enclave = Enclave::new(Some(output.clone()));
+    let mut enclave = Enclave::new(Some(&output.clone()));
     let key = enclave.generate(name, time, expires)?;
     println!("{}", key.pretty_format(true));
     Ok(())

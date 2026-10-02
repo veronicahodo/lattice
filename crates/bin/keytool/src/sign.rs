@@ -1,7 +1,7 @@
 use anyhow::Result;
 use base64::engine::{Engine, general_purpose::URL_SAFE_NO_PAD};
 use key::enclave;
-use rhex::signature::RhexSignature;
+use rhex::signature::{AgileKey, RhexSigAlgo::Ed25519, RhexSignature};
 
 pub fn sign(
     key: &String,
@@ -27,15 +27,18 @@ pub fn sign(
     };
     let hash = rhex.get_hash(sig_type.clone());
     // Load the enclave and sign
-    let mut enclave = enclave::Enclave::new(Some(enclave_path.clone()));
-    let _ = enclave.populate();
+    let mut enclave = enclave::Enclave::new(Some(&enclave_path.clone()));
+    enclave.populate()?;
     let key = URL_SAFE_NO_PAD.decode(key).unwrap();
     let key: [u8; 32] = key.try_into().unwrap();
     let sig = enclave.sign(&key.clone(), &hash)?;
     // Add the signature to the rhex
     rhex.sigs.push(RhexSignature {
-        pk: key.try_into().unwrap(),
-        sig,
+        pk: AgileKey {
+            algo: Ed25519,
+            key_bytes: key.try_into().unwrap(),
+        },
+        sig: sig.to_vec(),
         t: sig_type.clone(),
     });
     // store the rhex

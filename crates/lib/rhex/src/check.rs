@@ -1,7 +1,6 @@
 use anyhow::Result;
-use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 
-use crate::Rhex;
+use crate::{Rhex, signature::RhexSigAlgo::Ed25519};
 
 impl Rhex {
     /// # check_curr_hash
@@ -24,7 +23,7 @@ impl Rhex {
     ///
     pub fn check_data_size(&self) -> Result<CheckStatus> {
         let size = self.data_size();
-        if size > 1024 {
+        if size > Rhex::MAX_DATA {
             return Ok(CheckStatus::DataBloated(size));
         }
         Ok(CheckStatus::Success)
@@ -43,12 +42,10 @@ impl Rhex {
     /// Checks a singular signature by position in rhex.sigs
     ///
     pub fn check_sig(&self, pos: usize) -> Result<CheckStatus> {
-        let key = VerifyingKey::from_bytes(&self.sigs[pos].pk.clone())?;
-        let status = key.verify(
-            &self.get_hash(self.sigs[pos].t.clone()),
-            &Signature::from_bytes(&self.sigs[pos].sig),
-        );
-        if status.is_err() {
+        let sig_status = match self.sigs[pos].pk.algo {
+            Ed25519 => self.validate_sig(pos),
+        };
+        if sig_status == false {
             return Ok(CheckStatus::SignatureInvalid(pos.try_into().unwrap()));
         }
         Ok(CheckStatus::Success)
@@ -61,7 +58,7 @@ impl Rhex {
     pub fn check_total_size(&self) -> Result<CheckStatus> {
         let mut buf = Vec::new();
         minicbor::encode(self, &mut buf)?;
-        if buf.len() > 4096 {
+        if buf.len() > Rhex::MAX_OVERALL {
             return Ok(CheckStatus::RhexBloated(buf.len()));
         }
         Ok(CheckStatus::Success)

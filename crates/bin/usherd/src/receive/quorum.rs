@@ -6,15 +6,19 @@ use lattice::{
     rhex::{
         check::CheckStatus,
         data::RhexData,
-        signature::{RhexSignature, RhexSignatureType},
+        signature::{AgileKey, RhexSigAlgo::Ed25519, RhexSignature, RhexSignatureType},
     },
     scope::{Scope, ushers::UsherRole},
 };
 use rand::seq::IndexedRandom;
 use time::MicroMarks;
-use transform::registry::TransformRegistry;
+use transform::{descriptor::DescriptorAction, registry::TransformRegistry};
 
-use crate::{config::UsherdConfig, receive::ReceiveStatus};
+use crate::{
+    config::UsherdConfig,
+    firing,
+    receive::{ReceiveStatus, sign_out::sign_out},
+};
 
 /// # recv_two_sigs(...)
 ///
@@ -31,7 +35,7 @@ pub fn recv_two_sigs(
     lattice: &mut Lattice,
     enclave: &mut Enclave,
     iam: &mut IAm,
-    _trans_registry: &mut TransformRegistry,
+    trans_registry: &mut TransformRegistry,
 ) -> Result<(ReceiveStatus, Option<Vec<Rhex>>)> {
     // Set up the goodies
     let mut output = Vec::new();
@@ -58,15 +62,37 @@ pub fn recv_two_sigs(
 
     // Does the R⬢ pass validation?
     let statuses = scope.unwrap().full_check(rhex)?;
+
     if statuses[0] != CheckStatus::Success {
         status = ReceiveStatus::FailedValidation(statuses[0].clone());
+    } else {
+        // fire validation transforms
+        let (trans_status, out_intent) =
+            firing::fire_transforms(rhex, trans_registry, DescriptorAction::Validate)?;
+        if trans_status != CheckStatus::Success {
+            status = ReceiveStatus::FailedValidation(trans_status);
+        }
+        // tack transform output to the output going to
+        for intent in out_intent {
+            output.push(sign_out(
+                enclave,
+                intent.clone(),
+                &AgileKey {
+                    algo: Ed25519,
+                    key_bytes: intent.author.try_into().unwrap(),
+                },
+            )?);
+        }
     }
 
     // Generate quorum signature
     let sig = enclave.sign(&usher, &rhex.get_hash(RhexSignatureType::Quorum(time)))?;
     let sig_package = RhexSignature {
-        pk: usher.clone(),
-        sig,
+        pk: AgileKey {
+            algo: Ed25519,
+            key_bytes: usher.try_into().unwrap(),
+        },
+        sig: sig.to_vec(),
         t: RhexSignatureType::Quorum(time),
     };
 
@@ -86,8 +112,11 @@ pub fn recv_two_sigs(
     let author_hash = new_rhex.get_hash(RhexSignatureType::Author);
     let author_sig = enclave.sign(&usher, &author_hash)?;
     let out_sig = RhexSignature {
-        pk: usher.clone(),
-        sig: author_sig,
+        pk: AgileKey {
+            algo: Ed25519,
+            key_bytes: usher.try_into().unwrap(),
+        },
+        sig: author_sig.to_vec(),
         t: RhexSignatureType::Author,
     };
     new_rhex.sigs.push(out_sig);
@@ -97,7 +126,7 @@ pub fn recv_two_sigs(
     Ok((status, Some(output)))
 }
 
-/// # pick_quorum(scope, local_keys)
+/// # select_quorum(scope, local_keys)
 ///
 /// Selects a quorum member to return their PK so we can sign as that
 /// key before returning the data
