@@ -1,4 +1,5 @@
 use anyhow::Result;
+use iroh::PublicKey;
 use lattice::scope::{Scope, ushers::UsherRole};
 
 use crate::IAm;
@@ -13,20 +14,18 @@ impl IAm {
     /// This can obviously be abused to front run, along with making
     /// any key past the first one inaccessable.
     ///
-    pub fn pick(&self, scope: &Scope, time: u64, role: UsherRole) -> Result<Option<[u8; 32]>> {
-        let ushers = scope.ushers_at(time)?;
+    pub fn pick(&self, scope: &Scope, time: u64, role: UsherRole) -> Result<Option<PublicKey>> {
+        let roles = scope.ushers_at(time)?;
         let mut master = Vec::new();
-        for usher in ushers {
-            let pubkey = self.entries.get(&usher.0);
+        let ushers = roles.get(&role);
+        for key in ushers.unwrap() {
+            let pubkey = self.entries.get(key.0);
             if pubkey.is_some() {
-                if usher.1.roles.contains(&role) {
-                    master.push(usher);
-                }
+                master.push(key.0.clone());
             }
         }
         if master.len() > 0 {
-            master.sort_by(|a, b| a.1.priority.cmp(&b.1.priority));
-            Ok(Some(master[0].0))
+            Ok(Some(master[0].clone()))
         } else {
             Ok(None)
         }

@@ -9,7 +9,6 @@ serde_json = { workspace = true }
 serde_bytes = { workspace = true }
 serde-big-array = { workspace = true }
 blake3 = { workspace = true }
-serde_cbor = { workspace = true }
 rand = { workspace = true }
 rhex = { path = "../rhex" }
 hex = { workspace = true }
@@ -17,3 +16,5 @@ anyhow = { workspace = true }
 minicbor = { workspace = true }
 transform = { path = "../transform" }
 util = { path = "../util" }
+cbor2 = { workspace = true }
+iroh = { workspace = true }

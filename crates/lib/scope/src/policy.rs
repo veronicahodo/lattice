@@ -1,22 +1,16 @@
 use anyhow::{Result, anyhow, bail};
-use minicbor::{Decode, Encode};
 use rhex::{Rhex, data::RhexData};
+use serde::{Deserialize, Serialize};
 
 use crate::rule::Rule;
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Policy {
-    #[n(0)]
     pub desc: String,
-    #[n(1)]
     pub rules: Vec<Rule>,
-    #[n(2)]
     pub eff: u64,
-    #[n(3)]
     pub exp: u64,
-    #[n(4)]
     pub tags: Vec<String>,
-    #[n(5)]
     pub issued: u64,
 }
 
@@ -201,9 +195,9 @@ impl Policy {
     /// This takes a R⬢ and pulls the data out to reconstitue back
     /// into a policy that we can just set.
     pub fn process_policy_set(rhex: &Rhex) -> Result<Self> {
-        let data: RhexData = minicbor::decode(&rhex.data)?;
+        let data: RhexData = cbor2::from_slice(&rhex.data)?;
         let policy: Policy = match data {
-            RhexData::Binary(b) => minicbor::decode(&b)?,
+            RhexData::Binary(b) => cbor2::from_slice(&b)?,
             _ => bail!("Invalid RhexData type on policy:set"),
         };
         Ok(policy)

@@ -2,6 +2,7 @@ use std::time;
 
 use anyhow::Result;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+use iroh::PublicKey;
 use key::enclave::Enclave;
 use scope::rhex::{
     self,
@@ -27,21 +28,20 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     .to_string();
 
     // Build data
-    let mut buffer = Vec::new();
     let data = RhexData::Mixed {
         meta: json.as_bytes().to_vec(),
         binary: binary_vec.as_flattened().to_vec(),
     };
-    minicbor::encode(&data, &mut buffer).expect("Failed to encode CBOR");
+    let buf = cbor2::to_canonical_vec(&data)?;
     let mut hasher = blake3::Hasher::new();
-    hasher.update(&buffer);
+    hasher.update(&buf);
     let hash = hasher.finalize();
     // Build intent
     rhex.intent.gen_nonce();
     rhex.intent.prev = None;
     rhex.intent.scope = "".to_string();
-    rhex.intent.author = key_conv.clone();
-    rhex.intent.usher = key_conv.clone();
+    rhex.intent.author = PublicKey::from_bytes(&key_conv)?;
+    rhex.intent.usher = PublicKey::from_bytes(&key_conv)?;
     rhex.intent.rt = "lattice:genesis".to_string();
     rhex.intent.schema = None;
     rhex.intent.data_hash = Some(*hash.as_bytes());

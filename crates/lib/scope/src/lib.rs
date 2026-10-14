@@ -3,10 +3,11 @@ use std::{collections::HashMap, path::PathBuf};
 use crate::{
     membership::Membership,
     policy::Policy,
-    ushers::{UsherAssignment, UsherRole},
+    ushers::{UsherRole, UsherStatus},
 };
 
 use anyhow::Result;
+use iroh::{EndpointId, PublicKey};
 pub use rhex;
 use rhex::Rhex;
 
@@ -24,7 +25,6 @@ pub mod rule;
 pub mod ushers;
 pub mod validate;
 pub mod walk;
-
 #[derive(Debug, Clone)]
 pub struct Scope {
     // canonical name of the scope
@@ -32,9 +32,9 @@ pub struct Scope {
     // policy calculated from Rhex
     pub policy_map: Vec<(u64, Policy)>,
     // groups of members
-    pub memberships: HashMap<([u8; 32], String), Vec<Membership>>,
+    pub memberships: HashMap<(PublicKey, String), Vec<Membership>>,
     // ushers in the scope and their priority
-    pub ushers: HashMap<[u8; 32], Vec<UsherAssignment>>,
+    pub ushers: HashMap<UsherRole, HashMap<EndpointId, Vec<UsherStatus>>>,
     // The current hash of the last record in the chain.
     pub head: Option<[u8; 32]>,
     // Last updated
@@ -42,7 +42,7 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn new(name: &String, creator: [u8; 32]) -> Self {
+    pub fn new(name: &String, creator: PublicKey) -> Result<Self> {
         let ship = Membership {
             issued: 0,
             eff: 0,
@@ -51,17 +51,18 @@ impl Scope {
         };
         let mut memberships = HashMap::new();
         let mut ushers = HashMap::new();
-        ushers.insert(
-            creator.clone(),
-            vec![UsherAssignment {
+        let mut endpoint = HashMap::new();
+        endpoint.insert(
+            EndpointId::from_bytes(&creator)?,
+            vec![UsherStatus {
                 issued: 0,
-                priority: 0,
-                roles: vec![UsherRole::Actor],
                 eff: 0,
                 exp: 1_000_000_000_000_000,
-                by: creator.clone(),
+                by: PublicKey::from_bytes(&[0; 32])?,
             }],
         );
+        ushers.insert(UsherRole::Actor, endpoint);
+
         let default_policy = match name.as_str() {
             "" => {
                 memberships.insert((creator.clone(), "world_line_zero".to_string()), vec![ship]);
@@ -72,14 +73,14 @@ impl Scope {
 
         let mut new_policy = Vec::new();
         new_policy.push((0, default_policy));
-        Self {
+        Ok(Self {
             name: name.to_string(),
             policy_map: new_policy,
             memberships,
             ushers,
             head: None,
             updated: 0,
-        }
+        })
     }
 
     /// # slurp_scope(&mut self, path)

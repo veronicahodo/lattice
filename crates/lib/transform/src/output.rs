@@ -1,6 +1,6 @@
 use anyhow::Result;
-use minicbor::{Decode, Encode};
 use rhex::intent::RhexIntent;
+use serde::{Deserialize, Serialize};
 
 use crate::error::TransformError;
 
@@ -8,11 +8,9 @@ use crate::error::TransformError;
 /// This should be what is deserialized from the
 /// output [u8], with outbound intents getting routed
 /// out.
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransformOutput {
-    #[b(0)]
     pub outbound_intents: Option<Vec<RhexIntent>>,
-    #[n(1)]
     pub err: Option<Vec<TransformError>>,
 }
 
@@ -42,6 +40,6 @@ impl TransformOutput {
     }
 
     pub fn from_slice(data: &[u8]) -> Result<Self> {
-        Ok(minicbor::decode(data).unwrap())
+        Ok(cbor2::from_slice::<Self>(&data)?)
     }
 }

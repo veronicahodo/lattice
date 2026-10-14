@@ -6,7 +6,8 @@ use key::enclave::Enclave;
 use lattice::Lattice;
 use transform::registry::TransformRegistry;
 
-use crate::{config::UsherdConfig, rebuild};
+use crate::config::UsherIrohConfig;
+use crate::server;
 
 /// # init_resource<T, FInit, FLoad>(...)
 ///
@@ -48,10 +49,10 @@ where
 /// scopes and verifies everything is hunky dory before we kick off
 /// the listener
 ///
-pub fn init_lattice(config: &UsherdConfig, registry: &TransformRegistry) -> Result<Lattice> {
+pub fn init_lattice(config: &UsherIrohConfig, registry: &TransformRegistry) -> Result<Lattice> {
     let lattice = if config.rebuild {
         println!("Starting rebuild from bootstrap at {}...", config.bootstrap);
-        rebuild::rebuild(config).unwrap()
+        server::rebuild::rebuild(config).unwrap()
     } else {
         let mut building_lattice = Lattice::new();
         if !config.verbose {
@@ -69,7 +70,7 @@ pub fn init_lattice(config: &UsherdConfig, registry: &TransformRegistry) -> Resu
 /// This takes each entry in the IAm that is set to Local and makes
 /// sure we can in fact sign as those keys.
 ///
-pub fn init_enclave(config: &UsherdConfig, iam: &IAm) -> Result<Enclave> {
+pub fn init_enclave(config: &UsherIrohConfig, iam: &IAm) -> Result<Enclave> {
     if config.verbose {
         print!("Enclave loading...");
     }

@@ -1,24 +1,9 @@
-use minicbor::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UsherLocation {
-    #[n(0)]
-    Local {
-        #[n(0)]
-        port: u16,
-    },
-    #[n(1)]
-    Internet {
-        #[n(0)]
-        ip: String,
-        #[n(1)]
-        port: u16,
-    },
-    #[n(2)]
-    Tor {
-        #[n(0)]
-        onion: String,
-    },
-    #[n(3)]
+    Local { port: u16 },
+    Internet { ip: String, port: u16 },
+    Tor { onion: String },
     Unknown,
 }

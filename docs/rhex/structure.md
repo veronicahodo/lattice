@@ -28,8 +28,13 @@ Rhex {
         }>
     },
     sigs: Vec<RhexSignature {
-        pk: [u8; 32],
-        sig: [u8; 64],
+        pk: AgileKey {
+            algo: RhexSigAlgo {
+                Ed25519
+            },
+            key_bytes: Vec<u8>
+        },
+        sig: Vec<u8>,
         t: RhexSignatureType {
             Author,
             Usher,

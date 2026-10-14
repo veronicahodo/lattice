@@ -6,4 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = { workspace = true }
 minicbor = { workspace = true }
+cbor2 = { workspace = true }
 lattice = { path = "../lattice" }
+iroh = { workspace = true }
+serde = { workspace = true }

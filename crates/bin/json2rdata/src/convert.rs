@@ -41,8 +41,7 @@ pub fn run(input: String, output: String) -> Result<()> {
     };
 
     println!("rhex_data: {:?}", rhex_data);
-    let mut buf = Vec::new();
-    minicbor::encode(&rhex_data, &mut buf)?;
+    let buf = cbor2::to_canonical_vec(&rhex_data)?;
     fs::write(output, buf).unwrap();
     println!("Done!");
     Ok(())

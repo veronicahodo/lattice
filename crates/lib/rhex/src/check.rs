@@ -56,10 +56,9 @@ impl Rhex {
     /// over 4k
     ///
     pub fn check_total_size(&self) -> Result<CheckStatus> {
-        let mut buf = Vec::new();
-        minicbor::encode(self, &mut buf)?;
-        if buf.len() > Rhex::MAX_OVERALL {
-            return Ok(CheckStatus::RhexBloated(buf.len()));
+        let bin = cbor2::to_canonical_vec(&self)?;
+        if bin.len() > Rhex::MAX_OVERALL {
+            return Ok(CheckStatus::RhexBloated(bin.len()));
         }
         Ok(CheckStatus::Success)
     }

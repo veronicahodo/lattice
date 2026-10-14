@@ -1,3 +1,4 @@
+use iroh::{EndpointId, PublicKey};
 use rand::random;
 
 use crate::{Rhex, context::RhexContext, intent::RhexIntent};
@@ -7,8 +8,8 @@ impl Rhex {
         prev: Option<[u8; 32]>,
         scope: String,
         nonce: Option<[u8; 32]>,
-        author: [u8; 32],
-        usher: [u8; 32],
+        author: PublicKey,
+        usher: EndpointId,
         rt: String,
         schema: Option<String>,
         data_hash: Option<[u8; 32]>,

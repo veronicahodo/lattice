@@ -1,4 +1,5 @@
 use anyhow::{Ok, Result};
+use iroh::PublicKey;
 use rhex::{Rhex, data::RhexData};
 use serde_json::Value;
 
@@ -6,11 +7,11 @@ use crate::{Scope, membership::Membership};
 
 impl Scope {
     pub fn process_key_grant(&mut self, rhex: &Rhex) -> Result<()> {
-        let data: RhexData = minicbor::decode(&rhex.data)?;
+        let data: RhexData = cbor2::from_slice(&rhex.data)?;
         let (meta, keys) = match data {
             RhexData::Mixed { meta, binary } => {
                 let meta_breakout: Value = serde_json::from_slice(&meta)?;
-                let keys: Vec<[u8; 32]> = minicbor::decode(&binary)?;
+                let keys: Vec<PublicKey> = cbor2::from_slice(&binary)?;
                 (meta_breakout, keys)
             }
             _ => anyhow::bail!("Wrong data type"),
@@ -64,11 +65,11 @@ impl Scope {
     }
 
     pub fn process_key_revoke(&mut self, rhex: &Rhex) -> Result<()> {
-        let data: RhexData = minicbor::decode(&rhex.data)?;
+        let data: RhexData = cbor2::from_slice(&rhex.data)?;
         let (meta, keys) = match &data {
             RhexData::Mixed { meta, binary } => {
                 let meta_value: Value = serde_json::from_slice(&meta)?;
-                let keys: Vec<[u8; 32]> = minicbor::decode(&binary)?;
+                let keys: Vec<PublicKey> = cbor2::from_slice(&binary)?;
                 (meta_value, keys)
             }
             _ => anyhow::bail!("Invalid RhexData type"),

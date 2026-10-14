@@ -6,7 +6,7 @@ pub type UsherMap = HashMap<[u8; 32], Usher>;
 
 pub fn disk_from(path: &str) -> UsherMap {
     let data = std::fs::read(path).unwrap();
-    let ushers: Vec<Usher> = minicbor::decode(&data).unwrap();
+    let ushers: Vec<Usher> = cbor2::from_slice(&data).unwrap();
     let mut ushers_map = HashMap::new();
     for usher in ushers {
         ushers_map.insert(usher.pk, usher);
@@ -19,6 +19,6 @@ pub fn disk_to(path: &str, ushers: UsherMap) {
     for (_, usher) in ushers {
         ushers_vec.push(usher);
     }
-    let data = minicbor::to_vec(&ushers_vec).unwrap();
-    std::fs::write(path, &data).unwrap();
+    let data = cbor2::to_canonical_vec(&ushers_vec);
+    std::fs::write(path, &data.unwrap()).unwrap();
 }

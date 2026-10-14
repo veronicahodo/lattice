@@ -1,4 +1,4 @@
-use minicbor::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 /*
     Structure: Rhex
 
@@ -35,19 +35,13 @@ pub mod respond;
 pub mod signature;
 pub mod validate;
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rhex {
-    #[n(0)]
     pub magic: [u8; 6],
-    #[n(1)]
     pub intent: RhexIntent,
-    #[n(2)]
     pub data: Vec<u8>,
-    #[n(3)]
     pub context: RhexContext,
-    #[n(4)]
     pub sigs: Vec<RhexSignature>,
-    #[n(5)]
     pub curr: Option<[u8; 32]>,
 }
 
@@ -108,11 +102,12 @@ impl Rhex {
     }
 
     pub fn to_vec(&self) -> Vec<u8> {
-        minicbor::to_vec(&self).unwrap()
+        let bin = cbor2::to_canonical_vec(&self);
+        bin.unwrap()
     }
 
     pub fn from_vec(data: &[u8]) -> Self {
-        let restored_rhex: Rhex = minicbor::decode(data).unwrap();
+        let restored_rhex: Rhex = cbor2::from_slice(&data).unwrap();
         restored_rhex
     }
 
@@ -123,7 +118,8 @@ impl Rhex {
         hasher.update(b"RHEX_CURR_HASH_0");
         hasher.update(&self.intent.get_hash());
         hasher.update(&self.context.get_hash());
-        hasher.update(&minicbor::to_vec(&self.sigs).unwrap());
+        let sigs_bin = cbor2::to_canonical_vec(&self.sigs);
+        hasher.update(&sigs_bin.unwrap());
         hasher.finalize().into()
     }
 

@@ -8,5 +8,5 @@ scope = { path = "../../lib/scope" }
 usher = { path = "../../lib/usher" }
 transform = { path = "../../lib/transform" }
 anyhow = { workspace = true }
-minicbor = { workspace = true }
 util = { path = "../util/" }
+cbor2 = { workspace = true }

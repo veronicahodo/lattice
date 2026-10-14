@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
+use iroh::PublicKey;
 use rhex::{
     Rhex,
     check::CheckStatus,
@@ -73,13 +74,13 @@ impl Scope {
     /// make sure they are valid for this submission
     ///
     pub fn check_quorum_and_observers(&self, rhex: &Rhex, time: &u64) -> Result<CheckStatus> {
-        let all_ushers = self.ushers_by_role(time.clone())?;
-        let mut quorum_ushers = Vec::new();
-        for usher in all_ushers {
-            if usher.0 == UsherRole::Quorum {
-                quorum_ushers.push(usher.1);
-            }
-        }
+        let all_ushers = self.usher_index_at(time.clone())?;
+        let quorum_ushers = all_ushers.get(&UsherRole::Quorum);
+        let quorum_ushers = if quorum_ushers.is_some() {
+            quorum_ushers.unwrap()
+        } else {
+            &vec![]
+        };
         let policy = self.get_policy_at(time.clone());
         let groups = self.member_of_at(rhex.intent.author.clone(), time.clone())?;
 
@@ -99,9 +100,9 @@ impl Scope {
                     if (time - rhex.context.at) < window {
                         match sig.t {
                             Quorum(_) => {
-                                if quorum_ushers
-                                    .contains(&sig.pk.key_bytes.clone().try_into().unwrap())
-                                {
+                                if quorum_ushers.contains(&PublicKey::from_bytes(
+                                    &sig.pk.key_bytes.clone().try_into().unwrap(),
+                                )?) {
                                     quorum_sigs.push(sig.clone());
                                 }
                             }
@@ -145,9 +146,14 @@ impl Scope {
     ///
     pub fn check_usher(&self, rhex: &Rhex) -> Result<CheckStatus> {
         // see if usher specified is available.
-        let mut current_usher = self.ushers_at(rhex.context.at.clone())?;
-        current_usher.retain(|u| u.0 == rhex.intent.usher);
-        if current_usher.len() == 0 {
+        let current_usher = self.ushers_at(rhex.context.at.clone())?;
+        // We can only get away with a blind unwrap here because a scope
+        // without actors is an invalid scope and cannot be created
+        let usher = current_usher
+            .get(&UsherRole::Actor)
+            .unwrap()
+            .get(&rhex.intent.usher);
+        if usher.is_none() {
             return Ok(CheckStatus::InvalidUsher);
         }
         Ok(CheckStatus::Success)

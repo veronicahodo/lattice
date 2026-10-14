@@ -1,4 +1,5 @@
-use minicbor::{Decode, Encode};
+use iroh::{EndpointId, PublicKey};
+use serde::{Deserialize, Serialize};
 /*
     Structure: RhexIntent
 
@@ -18,23 +19,15 @@ use minicbor::{Decode, Encode};
         details.
 */
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RhexIntent {
-    #[n(0)]
     pub prev: Option<[u8; 32]>,
-    #[n(1)]
     pub scope: String,
-    #[n(2)]
     pub nonce: [u8; 32],
-    #[n(3)]
-    pub author: [u8; 32],
-    #[n(4)]
-    pub usher: [u8; 32],
-    #[n(5)]
+    pub author: PublicKey,
+    pub usher: EndpointId,
     pub schema: Option<String>,
-    #[n(6)]
     pub rt: String,
-    #[n(7)]
     pub data_hash: Option<[u8; 32]>,
 }
 
@@ -44,8 +37,8 @@ impl RhexIntent {
             prev: None,
             scope: "".to_string(),
             nonce: [0; 32],
-            author: [0; 32],
-            usher: [0; 32],
+            author: PublicKey::from_bytes(&[0; 32]).unwrap(),
+            usher: EndpointId::from_bytes(&[0; 32]).unwrap(),
             schema: None,
             rt: "".to_string(),
             data_hash: None,
@@ -53,7 +46,8 @@ impl RhexIntent {
     }
 
     pub fn get_hash(&self) -> [u8; 32] {
-        blake3::hash(&minicbor::to_vec(&self).unwrap()).into()
+        let bin = cbor2::to_canonical_vec(self);
+        blake3::hash(&bin.unwrap()).as_bytes().clone()
     }
 
     pub fn gen_nonce(&mut self) {
@@ -63,8 +57,8 @@ impl RhexIntent {
     pub fn build(
         prev: Option<[u8; 32]>,
         scope: String,
-        author: [u8; 32],
-        usher: [u8; 32],
+        author: PublicKey,
+        usher: EndpointId,
         schema: Option<String>,
         rt: String,
         data_hash: Option<[u8; 32]>,

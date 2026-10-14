@@ -44,7 +44,7 @@ impl Rhex {
             Some(hash) => URL_SAFE_NO_PAD.encode(hash),
             None => "None".to_string(),
         };
-        let data: RhexData = minicbor::decode(&self.data).unwrap();
+        let data: RhexData = cbor2::from_slice(&self.data).unwrap();
 
         let output = format!(
             "Rhex: {{

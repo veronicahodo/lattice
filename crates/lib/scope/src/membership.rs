@@ -1,4 +1,5 @@
 use anyhow::Result;
+use iroh::PublicKey;
 
 use crate::Scope;
 
@@ -7,7 +8,7 @@ pub struct Membership {
     pub issued: u64,
     pub eff: u64,
     pub exp: u64,
-    pub by: [u8; 32],
+    pub by: PublicKey,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -15,7 +16,7 @@ pub enum MemberAccess {
     Valid,
     MembershipExpired(Membership),
     FutureMembership(Membership),
-    NoEntry([u8; 32], String),
+    NoEntry(PublicKey, String),
 }
 
 impl Scope {
@@ -24,7 +25,7 @@ impl Scope {
     /// this is just a lot of work to keep the most current
     /// access rights.
     ///
-    pub fn membership_status(&self, key: [u8; 32], group: &String, time: u64) -> MemberAccess {
+    pub fn membership_status(&self, key: PublicKey, group: &String, time: u64) -> MemberAccess {
         let group_map = self.memberships.get(&(key, group.clone()));
         if group_map.is_none() {
             return MemberAccess::NoEntry(key, group.to_string());
@@ -50,7 +51,7 @@ impl Scope {
     pub fn add_membership(
         &mut self,
         group: String,
-        keys: Vec<[u8; 32]>,
+        keys: Vec<PublicKey>,
         membership: Membership,
     ) -> Result<()> {
         for key in keys {
@@ -63,7 +64,7 @@ impl Scope {
     /// # remove_membership
     /// Removes a set of keys from the set of groups
     ///
-    pub fn remove_membership(&mut self, keys: Vec<[u8; 32]>, groups: Vec<String>) {
+    pub fn remove_membership(&mut self, keys: Vec<PublicKey>, groups: Vec<String>) {
         for key in keys {
             for group in &groups {
                 self.memberships.remove(&(key.clone(), group.clone()));
@@ -77,7 +78,7 @@ impl Scope {
     ///
     /// I feel like this could probably be optimized...?
     ///
-    pub fn member_of_at(&self, key: [u8; 32], time: u64) -> Result<Vec<String>> {
+    pub fn member_of_at(&self, key: PublicKey, time: u64) -> Result<Vec<String>> {
         let mut output = Vec::new();
         for ((map_key, group), memberships) in &self.memberships {
             if &key == map_key {

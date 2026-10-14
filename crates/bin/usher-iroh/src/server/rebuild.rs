@@ -1,18 +1,19 @@
 use std::fs;
 
 use anyhow::Result;
+use iroh::PublicKey;
 use lattice::{Lattice, Rhex, usher};
 
-use crate::config::UsherdConfig;
+use crate::config::UsherIrohConfig;
 
 /// # Lattice Rebuild
 /// A core set of ushers and the current root scope are always
 /// provided with the distribution, so this resets everything to
 /// that bootstrapped state.
-pub fn rebuild(config: &UsherdConfig) -> Result<Lattice> {
+pub fn rebuild(config: &UsherIrohConfig) -> Result<Lattice> {
     let scope_path = &config.scopes;
     let usher_map_in = format!("{}usher_map.cbor", &config.bootstrap);
-    let usher_map_out = &config.usher_map;
+    let usher_map_out = format!("{}usher_map.cbor", &config.root);
     let root_scope_bootstrap = format!("{}root_scope.rchain", &config.bootstrap);
 
     // First, torch {path}/scopes and {path}/usher_map.cbor
@@ -24,7 +25,7 @@ pub fn rebuild(config: &UsherdConfig) -> Result<Lattice> {
     let ushers = usher::map::disk_from(&usher_map_in);
     usher::map::disk_to(&usher_map_out, ushers);
     let root_scope = fs::read(&root_scope_bootstrap)?;
-    let root_rhex: Vec<Rhex> = minicbor::decode(&root_scope)?;
+    let root_rhex: Vec<Rhex> = cbor2::from_slice(&root_scope)?;
 
     // Save the bootstrapped root scope to {config.scopes}/-root-.rhex
     fs::write(format!("{}-root-.rchain", &config.scopes), &root_scope)?;
@@ -37,7 +38,10 @@ pub fn rebuild(config: &UsherdConfig) -> Result<Lattice> {
     // the chain anyways to build a policy for the root scope.
 
     // Make the root scope an object
-    let mut root_scope = lattice::scope::Scope::new(&"".to_string(), lattice::Lattice::GENESIS_KEY);
+    let mut root_scope = lattice::scope::Scope::new(
+        &"".to_string(),
+        PublicKey::from_bytes(&lattice::Lattice::GENESIS_KEY)?,
+    )?;
     // ...and populate it
     root_scope.head = Some(root_rhex[root_rhex.len() - 1].calc_curr());
 

@@ -1,25 +1,10 @@
-use minicbor::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Encode, Decode, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum IAmLocation {
-    #[n(0)]
     None,
-    #[n(1)]
     Local,
-    #[n(2)]
-    Internet {
-        #[n(0)]
-        address: String,
-        #[n(1)]
-        port: u16,
-    },
-    #[n(3)]
-    Tor {
-        #[n(0)]
-        onion: String,
-        #[n(1)]
-        port: u16,
-    },
-    #[n(4)]
+    Internet { address: String, port: u16 },
+    Tor { onion: String, port: u16 },
     Unknown,
 }

@@ -1,37 +1,14 @@
 use anyhow::Result;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
-use minicbor::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RhexData {
-    #[n(0)]
     None,
-
-    #[n(1)]
-    Json(
-        #[b(0)]
-        #[cbor(with = "minicbor::bytes")]
-        Vec<u8>,
-    ),
-
-    #[n(2)]
-    Binary(
-        #[b(0)]
-        #[cbor(with = "minicbor::bytes")]
-        Vec<u8>,
-    ),
-
-    #[n(3)]
-    Mixed {
-        #[b(0)]
-        #[cbor(with = "minicbor::bytes")]
-        meta: Vec<u8>,
-        #[b(1)]
-        #[cbor(with = "minicbor::bytes")]
-        binary: Vec<u8>,
-    },
-    #[n(4)]
-    Removed(#[n(0)] String),
+    Json(Vec<u8>),
+    Binary(Vec<u8>),
+    Mixed { meta: Vec<u8>, binary: Vec<u8> },
+    Removed(String),
 }
 
 impl RhexData {
@@ -52,11 +29,11 @@ impl RhexData {
     }
 
     pub fn to_vec(&self) -> Result<Vec<u8>> {
-        Ok(minicbor::to_vec(self)?)
+        Ok(cbor2::to_canonical_vec(self)?)
     }
 
     pub fn from_vec(data: &Vec<u8>) -> Result<Self> {
-        Ok(minicbor::decode(data)?)
+        Ok(cbor2::from_slice(data)?)
     }
 
     pub fn get_hash(&self) -> [u8; 32] {

@@ -1,0 +1,21 @@
+[package]
+name = "usher-iroh"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+iroh-services = { path = "../../lib/iroh-services" }
+lattice = { path = "../../lib/lattice" }
+key = { path = "../../lib/key" }
+iam = { path = "../../lib/iam" }
+transform = { path = "../../lib/transform" }
+util = { path = "../../lib/util" }
+clap = { workspace = true }
+iroh = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+minicbor = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }
+anyhow = { workspace = true }
+cbor2 = { workspace = true }

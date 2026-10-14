@@ -1,11 +1,8 @@
-use minicbor::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RhexContext {
-    #[n(0)]
     pub at: u64,
-    #[n(1)]
-    #[cbor(borrow)]
     pub s: Option<ContextSpacial>,
 }
 
@@ -15,16 +12,14 @@ impl RhexContext {
     }
 
     pub fn get_hash(&self) -> [u8; 32] {
-        blake3::hash(&minicbor::to_vec(&self).unwrap()).into()
+        let bin = cbor2::to_canonical_vec(self);
+        blake3::hash(&bin.unwrap()).into()
     }
 }
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContextSpacial {
-    #[n(0)]
     pub s_ref: String,
-    #[n(1)]
-    #[cbor(with = "minicbor::bytes")]
     pub s_data: Vec<u8>,
 }
 

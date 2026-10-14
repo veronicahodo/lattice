@@ -1,4 +1,5 @@
 use anyhow::{Result, bail};
+use iroh::PublicKey;
 use rhex::{Rhex, check::CheckStatus};
 use transform::{
     descriptor::DescriptorAction, output::TransformOutput, registry::TransformRegistry,
@@ -15,7 +16,7 @@ impl Scope {
     ///
     pub fn walk_rhex(
         name: &String,
-        init_key: [u8; 32],
+        init_key: PublicKey,
         rhex: &Vec<Rhex>,
         trans_reg: &TransformRegistry,
         verbose: bool,
@@ -24,7 +25,7 @@ impl Scope {
         if verbose {
             println!("Constructing scope {}...", name);
         }
-        let mut scope = Scope::new(name, init_key);
+        let mut scope = Scope::new(name, init_key)?;
 
         // We set the initial policy. These defaults will set the
         // state for that `lattice:genesis`/`scope:genesis` R⬢
@@ -100,7 +101,7 @@ impl Scope {
                         // iterate and run
                         for trans in rt.unwrap() {
                             let trans_out_bin = trans_reg.run(trans, &r.data)?;
-                            let trans_output: TransformOutput = minicbor::decode(&trans_out_bin)?;
+                            let trans_output: TransformOutput = cbor2::from_slice(&trans_out_bin)?;
                             if trans_output.fatal_error() {
                                 // FIXME: Figure out how we're gonna error out of this shit
                                 // As is, it's REALLY BAD

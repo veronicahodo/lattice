@@ -1,28 +1,44 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
-use minicbor::{Decode, Encode};
+use anyhow::{Result, bail};
+use iroh::{EndpointId, PublicKey};
 use rhex::{Rhex, data::RhexData};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::Scope;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UsherStatus {
+    pub issued: u64,
+    pub eff: u64,
+    pub exp: u64,
+    pub by: PublicKey,
+}
 
 impl Scope {
     /// # ushers_at(self, time)
     ///
     /// Returns the ushers and their assignments at a specified time
     ///
-    pub fn ushers_at(&self, time: u64) -> Result<Vec<([u8; 32], UsherAssignment)>> {
-        let mut output = Vec::new();
-        for (key, assignment) in &self.ushers {
-            let mut assigned = assignment.clone();
-            assigned.retain(|ua| ua.issued < time);
-            if assigned.last().is_some() {
-                let last = assigned.last().unwrap();
-                if last.eff < time && last.exp > time {
-                    output.push((key.clone(), last.clone()))
+    pub fn ushers_at(
+        &self,
+        time: u64,
+    ) -> Result<HashMap<UsherRole, HashMap<EndpointId, UsherStatus>>> {
+        let mut output = HashMap::new();
+        for (role, members_hm) in &self.ushers {
+            let mut endpoint_latest = HashMap::new();
+            for member in members_hm {
+                let mut statuses = member.1.clone();
+                statuses.retain(|s| s.issued < time);
+                if statuses.last().is_some() {
+                    let last = statuses.last().unwrap();
+                    if last.eff < time && last.exp > time {
+                        endpoint_latest.insert(PublicKey::from(member.0.clone()), last.clone());
+                    }
                 }
             }
+            output.insert(role.clone(), endpoint_latest);
         }
         Ok(output)
     }
@@ -32,43 +48,15 @@ impl Scope {
     /// This is similar to `Scope::ushers_at` except this doesn't
     /// return the UsherAssignment with the list of public keys
     ///
-    pub fn usher_index_at(&self, time: u64) -> Result<Vec<[u8; 32]>> {
-        let mut output = Vec::new();
-        let ushers = self.ushers_at(time)?;
-        for usher in ushers {
-            output.push(usher.0.clone());
-        }
-        Ok(output)
-    }
-
-    /// # ushers_by_priority(self, time)
-    ///
-    /// Provides the set of ushers for a specific time, but unlike
-    /// `Scope::ushers_at` it provides it's priority instead of
-    /// of assignment
-    ///
-    pub fn ushers_by_priority(&self, time: u64) -> Result<Vec<([u8; 32], u8)>> {
-        let mut curr_ushers = self.ushers_at(time)?;
-        curr_ushers.sort_by_key(|&(_, ref asssignment)| asssignment.priority);
-        let mut output = Vec::new();
-        for usher in curr_ushers {
-            output.push((usher.0, usher.1.priority));
-        }
-        Ok(output)
-    }
-
-    /// # ushers_by_role(self, time)
-    ///
-    /// Creates a hashmap of the ushers at a certain time based on
-    /// role, like `quorum` or `actor`
-    ///
-    pub fn ushers_by_role(&self, time: u64) -> Result<HashMap<UsherRole, [u8; 32]>> {
+    pub fn usher_index_at(&self, time: u64) -> Result<HashMap<UsherRole, Vec<EndpointId>>> {
         let mut output = HashMap::new();
-        let curr_ushers = self.ushers_at(time)?;
-        for usher in curr_ushers {
-            for r in usher.1.roles {
-                output.insert(r, usher.0);
+        let ushers = self.ushers_at(time)?;
+        for role in ushers {
+            let mut endpoints = Vec::new();
+            for usher in role.1 {
+                endpoints.push(usher.0);
             }
+            output.insert(role.0, endpoints);
         }
         Ok(output)
     }
@@ -77,21 +65,19 @@ impl Scope {
         if rhex.intent.rt != "usher:assign".to_string() {
             anyhow::bail!("Incorrect record type")
         }
-        let payload: RhexData = minicbor::decode(&rhex.data)?;
+        let payload: RhexData = cbor2::from_slice(&rhex.data)?;
         // FIXME: This shits harder that a night of Everclear and Taco Bell.
         // Do not allow all these unwraps!
-        let (roles, priority, eff, exp, keys) = match payload {
+        let (roles, eff, exp, keys) = match payload {
             RhexData::Mixed { meta, binary } => {
                 let meta = serde_json::from_slice::<Value>(&meta)?;
-                let out_keys: Vec<[u8; 32]> = minicbor::decode(&binary)?;
+                let out_keys: Vec<EndpointId> = cbor2::from_slice(&binary)?;
                 let roles = meta.get("roles").unwrap().clone();
                 let roles = roles.as_array().unwrap();
-                let priority = meta.get("priority").unwrap().clone();
                 let eff = meta.get("eff").unwrap().clone();
                 let exp = meta.get("exp").unwrap().clone();
                 (
                     roles.clone(),
-                    priority.as_u64().unwrap(),
                     eff.as_u64().unwrap(),
                     exp.as_u64().unwrap(),
                     out_keys,
@@ -111,81 +97,91 @@ impl Scope {
                 _ => anyhow::bail!("Invalid role"),
             }
         }
-        for key in keys {
-            let working = self.ushers.get_mut(&key);
-            let assignment = UsherAssignment {
+        for role in roles_array {
+            let branch = self.ushers.entry(role).or_insert_with(HashMap::new);
+            let status = UsherStatus {
                 issued: rhex.context.at.clone(),
-                priority: priority.try_into().unwrap(),
-                roles: roles_array.clone(),
                 eff,
                 exp,
                 by: rhex.intent.author.clone(),
             };
-            if working.is_some() {
-                working.unwrap().push(assignment.clone());
-            } else {
-                self.ushers.insert(key.clone(), vec![assignment]);
+            for key in &keys {
+                let usher = branch.get_mut(key);
+                if usher.is_some() {
+                    usher.unwrap().push(status.clone());
+                } else {
+                    branch.insert(key.clone(), vec![status.clone()]);
+                }
             }
         }
         Ok(())
     }
 
     pub fn process_usher_revoke(&mut self, rhex: &Rhex) -> Result<()> {
-        let data: RhexData = minicbor::decode(&rhex.data)?;
-        let keys = match data {
-            RhexData::Binary(b) => minicbor::decode::<Vec<[u8; 32]>>(&b).unwrap(),
+        let data: RhexData = cbor2::from_slice(&rhex.data)?;
+        let (roles, keys) = match data {
+            RhexData::Mixed { meta, binary } => {
+                let mut json_meta: Value = serde_json::from_slice(&meta)?;
+                let roles_val = json_meta
+                    .get_mut("roles")
+                    .map(|v| v.take())
+                    .filter(|v| v.is_array())
+                    .ok_or_else(|| anyhow::anyhow!("No roles to revoke or not an array"))?;
+                let roles: Vec<String> = serde_json::from_value(roles_val)?;
+
+                let keys: Vec<PublicKey> = cbor2::from_slice(&binary)?;
+                (roles, keys)
+            }
             _ => anyhow::bail!("Wrong data type"),
         };
 
-        for key in keys {
-            let working = self.ushers.get_mut(&key);
-            let assignment = UsherAssignment {
+        for role in roles {
+            let lookup = match role.as_str() {
+                "actor" => UsherRole::Actor,
+                "cache" => UsherRole::Cache,
+                "mirror" => UsherRole::Mirror,
+                "observer" => UsherRole::Observer,
+                "other" => UsherRole::Other,
+                "quorum" => UsherRole::Quorum,
+                _ => bail!("Invalid usher role: {}", role.as_str()),
+            };
+
+            let list = self.ushers.get_mut(&lookup);
+            let status = UsherStatus {
                 issued: rhex.context.at.clone(),
-                priority: 255,
-                roles: vec![],
                 eff: rhex.context.at.clone(),
                 exp: 1_000_000_000_000_000,
                 by: rhex.intent.author.clone(),
             };
-            if working.is_some() {
-                working.unwrap().push(assignment.clone());
-            } else {
-                self.ushers.insert(key.clone(), vec![assignment]);
-            }
+
+            if let Some(map) = list {
+                for (key, status_vec) in map.iter_mut() {
+                    if keys.contains(key) {
+                        status_vec.push(status.clone());
+                    }
+                }
+            };
         }
         Ok(())
     }
 }
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UsherAssignment {
-    #[n(0)]
     pub issued: u64,
-    #[n(1)]
     pub priority: u8,
-    #[n(2)]
     pub roles: Vec<UsherRole>,
-    #[n(3)]
     pub eff: u64,
-    #[n(4)]
     pub exp: u64,
-    #[n(5)]
-    #[cbor(with = "minicbor::bytes")]
     pub by: [u8; 32],
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum UsherRole {
-    #[n(0)]
     Actor,
-    #[n(1)]
     Mirror,
-    #[n(2)]
     Cache,
-    #[n(3)]
     Quorum,
-    #[n(4)]
     Observer,
-    #[n(5)]
     Other,
 }

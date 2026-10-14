@@ -1,0 +1,12 @@
+[package]
+name = "iroh-services"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+minicbor = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }
+iroh = { workspace = true }
+iroh-blobs = { workspace = true }
+blake3 = { workspace = true }
+serde = { workspace = true }

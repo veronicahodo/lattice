@@ -6,6 +6,6 @@ edition = "2024"
 [dependencies]
 serde = { workspace = true }
 key = { path = "../../lib/key" }
-minicbor = { workspace = true }
 rhex = { path = "../../lib/rhex" }
 anyhow = { workspace = true }
+cbor2 = { workspace = true }

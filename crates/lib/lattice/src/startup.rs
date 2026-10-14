@@ -36,7 +36,7 @@ impl Lattice {
             }
             let scope_path = entry.path();
             let rchain_bin = std::fs::read(scope_path)?;
-            let rchain: Vec<Rhex> = minicbor::decode(&rchain_bin)?;
+            let rchain: Vec<Rhex> = cbor2::from_slice(&rchain_bin)?;
             let scope = Scope::walk_rhex(
                 &rchain[0].intent.scope.clone(),
                 rchain[0].intent.author.clone(),
