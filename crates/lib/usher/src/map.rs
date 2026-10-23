@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
+use iroh::PublicKey;
+
 use crate::Usher;
 
-pub type UsherMap = HashMap<[u8; 32], Usher>;
+pub type UsherMap = HashMap<PublicKey, Usher>;
 
 pub fn disk_from(path: &str) -> UsherMap {
     let data = std::fs::read(path).unwrap();

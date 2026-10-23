@@ -41,4 +41,12 @@ impl RhexData {
         hasher.update(&self.to_vec().unwrap());
         hasher.finalize().into()
     }
+
+    pub fn get_data_hash(&self) -> [u8; 32] {
+        let mut hasher = blake3::Hasher::new();
+        let data = self.to_vec().unwrap();
+        hasher.update(&data);
+        hasher.update(&data);
+        hasher.finalize().into()
+    }
 }

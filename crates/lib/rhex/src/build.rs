@@ -1,13 +1,14 @@
+use anyhow::{Result, bail};
 use iroh::{EndpointId, PublicKey};
 use rand::random;
 
-use crate::{Rhex, context::RhexContext, intent::RhexIntent};
+use crate::{Rhex, context::RhexContext, intent::RhexIntent, signature::RhexSignature};
 
 impl Rhex {
     pub fn build(
         prev: Option<[u8; 32]>,
         scope: String,
-        nonce: Option<[u8; 32]>,
+        nonce: Option<[u8; 16]>,
         author: PublicKey,
         usher: EndpointId,
         rt: String,
@@ -31,9 +32,33 @@ impl Rhex {
                 data_hash,
             },
             data: vec![],
-            context: RhexContext { at: 0, s: None },
+            context: None,
             sigs: Vec::new(),
             curr: None,
         }
+    }
+
+    pub fn build_with(
+        intent: &RhexIntent,
+        context: &Option<RhexContext>,
+        sigs: &Vec<RhexSignature>,
+        data: &Option<Vec<u8>>,
+    ) -> Rhex {
+        Rhex {
+            magic: Rhex::MAGIC,
+            intent: intent.clone(),
+            context: context.clone(),
+            sigs: sigs.clone(),
+            data: data.clone().unwrap_or_else(|| vec![]),
+            curr: None,
+        }
+    }
+
+    pub fn finalize(&mut self) -> Result<()> {
+        if self.context.is_none() {
+            bail!("Not final!");
+        }
+        self.curr = Some(self.calc_curr());
+        Ok(())
     }
 }

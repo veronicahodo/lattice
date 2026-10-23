@@ -54,7 +54,7 @@ impl Scope {
                 group,
                 keys.clone(),
                 Membership {
-                    issued: rhex.context.at.clone(),
+                    issued: rhex.context.clone().unwrap().at,
                     eff: eff.clone(),
                     exp: exp.clone(),
                     by: rhex.intent.author.clone(),

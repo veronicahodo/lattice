@@ -16,5 +16,6 @@ anyhow = { workspace = true }
 minicbor = { workspace = true }
 transform = { path = "../transform" }
 util = { path = "../util" }
+time = { path = "../time" }
 cbor2 = { workspace = true }
 iroh = { workspace = true }

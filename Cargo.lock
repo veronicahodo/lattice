@@ -502,6 +502,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "comms"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cbor2",
+ "iroh",
+ "lattice",
+ "minicbor",
+ "serde",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3433,6 +3445,7 @@ dependencies = [
  "serde-big-array",
  "serde_bytes",
  "serde_json",
+ "time 0.1.0",
  "transform",
  "util",
 ]
@@ -4286,6 +4299,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cbor2",
+ "iroh",
  "key",
  "rhex",
  "serde",
@@ -4300,12 +4314,15 @@ dependencies = [
  "clap",
  "iam",
  "iroh",
+ "iroh-blobs",
  "iroh-services",
  "key",
  "lattice",
  "minicbor",
  "serde",
+ "serde_bytes",
  "serde_json",
+ "time 0.1.0",
  "tokio",
  "tokio-util",
  "transform",

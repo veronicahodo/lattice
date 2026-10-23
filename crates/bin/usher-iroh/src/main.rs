@@ -1,19 +1,30 @@
-use std::process::exit;
+use std::{path::PathBuf, process::exit, sync::Arc};
 
 use crate::{
     cli::{Cli, Commands},
+    comms::chatter::ChatterRequest,
     config::UsherIrohConfig,
 };
 use clap::Parser;
 use util::{verbose_print, verbose_println};
 
+pub mod append;
+pub mod author;
+pub mod bps;
+pub mod check;
 pub mod cli;
+pub mod comms;
 pub mod config;
 pub mod gossip;
+pub mod process;
+pub mod quorum;
 pub mod retrieve;
 pub mod server;
+pub mod trans;
+pub mod usher;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("*****************************************************");
     println!("* LATTICE USHER DAEMON (w/ Iroh!)                   *");
     println!("*****************************************************");
@@ -26,7 +37,6 @@ fn main() {
             bind,
             port,
             root,
-            enclave,
             i_am,
             scopes,
             usher_map,
@@ -35,8 +45,9 @@ fn main() {
             bootstrap,
             rebuild,
             observer,
-            verbose,
         } => {
+            let enclave = cli.enclave;
+            let verbose = cli.verbose;
             verbose_print(format!("Loading config ({})...", config), verbose);
             let config_string = config.clone();
             let config = UsherIrohConfig::from_disk(config);
@@ -67,11 +78,16 @@ fn main() {
             }
 
             verbose_println("Beginning LISTEN...".to_string(), verbose);
-            let run_status = server::run(&config);
+            let run_status = server::run(Arc::new(config)).await;
             if run_status.is_err() {
                 println!("Server failed with error: {}", run_status.err().unwrap());
                 exit(3);
             }
+        }
+        Commands::Submit { chatter } => {
+            let chatter: Vec<ChatterRequest> =
+                cbor2::from_slice(&std::fs::read(&PathBuf::from(chatter)).unwrap()).unwrap();
+            let _ = comms::submit::submit(chatter).await;
         }
     }
 }

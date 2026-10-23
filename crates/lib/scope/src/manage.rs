@@ -17,7 +17,8 @@ impl Scope {
             "usher:revoke" => self.process_usher_revoke(rhex),
             "policy:set" => {
                 let policy = Policy::process_policy_set(rhex)?;
-                self.policy_map.push((rhex.context.at, policy));
+                self.policy_map
+                    .push((rhex.context.clone().unwrap().at, policy));
                 Ok(())
             }
             _ => return Ok(ScopeUpdateStatus::NotUsed),

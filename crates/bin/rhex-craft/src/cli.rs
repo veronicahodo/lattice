@@ -43,6 +43,13 @@ pub enum Commands {
         enclave_path: Option<String>,
     },
     View {
+        #[arg(short, long)]
         input: String,
+    },
+    Submit {
+        #[arg(short, long)]
+        rbuild: String,
+        #[arg(short, long)]
+        state: String,
     },
 }

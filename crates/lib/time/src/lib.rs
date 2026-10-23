@@ -40,3 +40,12 @@ impl MicroMarks for i64 {
         micromarks as u64
     }
 }
+
+pub fn get_current_time() -> u64 {
+    let time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64;
+    let time = time.as_micromarks();
+    time
+}

@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 pub struct RhexIntent {
     pub prev: Option<[u8; 32]>,
     pub scope: String,
-    pub nonce: [u8; 32],
+    pub nonce: [u8; 16],
     pub author: PublicKey,
     pub usher: EndpointId,
     pub schema: Option<String>,
@@ -36,7 +36,7 @@ impl RhexIntent {
         Self {
             prev: None,
             scope: "".to_string(),
-            nonce: [0; 32],
+            nonce: Self::gen_nonce(),
             author: PublicKey::from_bytes(&[0; 32]).unwrap(),
             usher: EndpointId::from_bytes(&[0; 32]).unwrap(),
             schema: None,
@@ -50,28 +50,15 @@ impl RhexIntent {
         blake3::hash(&bin.unwrap()).as_bytes().clone()
     }
 
-    pub fn gen_nonce(&mut self) {
-        self.nonce = rand::random();
+    pub fn get_sig_hash(&self) -> [u8; 32] {
+        let bin = cbor2::to_canonical_vec(self);
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(b"RHEX_AUTHOR_SIG_0");
+        hasher.update(&bin.unwrap());
+        hasher.finalize().into()
     }
 
-    pub fn build(
-        prev: Option<[u8; 32]>,
-        scope: String,
-        author: PublicKey,
-        usher: EndpointId,
-        schema: Option<String>,
-        rt: String,
-        data_hash: Option<[u8; 32]>,
-    ) -> Self {
-        let mut intent = Self::new();
-        intent.prev = prev;
-        intent.scope = scope;
-        intent.author = author;
-        intent.usher = usher;
-        intent.gen_nonce();
-        intent.schema = schema;
-        intent.rt = rt;
-        intent.data_hash = data_hash;
-        intent
+    pub fn gen_nonce() -> [u8; 16] {
+        rand::random()
     }
 }

@@ -4,6 +4,18 @@ use crate::config::UsherIrohConfig;
 
 #[derive(Parser)]
 pub struct Cli {
+    #[arg(short, long, global = true)]
+    pub verbose: bool,
+
+    #[arg(
+        short,
+        long,
+        global = true,
+        value_name = "PATH",
+        default_value = "./keys"
+    )]
+    pub enclave: Option<String>,
+
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -22,9 +34,6 @@ pub enum Commands {
 
         #[arg(long, short)]
         root: Option<String>,
-
-        #[arg(long, short)]
-        enclave: Option<String>,
 
         #[arg(long, short)]
         i_am: Option<String>,
@@ -49,8 +58,9 @@ pub enum Commands {
 
         #[arg(long, short)]
         observer: bool,
-
-        #[arg(long, short)]
-        verbose: bool,
+    },
+    Submit {
+        #[arg(short, long)]
+        chatter: String,
     },
 }

@@ -3,7 +3,7 @@ use std::fs;
 use anyhow::{Ok, Result};
 use base64::Engine as _;
 use iroh::PublicKey;
-use scope::rhex::{Rhex, data::RhexData, intent::RhexIntent};
+use scope::rhex::{Rhex, data::RhexData};
 
 pub fn build(
     prev: Option<String>,
@@ -48,7 +48,13 @@ pub fn build(
         .decode(usher)
         .unwrap();
     let usher = PublicKey::from_bytes(usher[..].try_into()?)?;
-    rhex.intent = RhexIntent::build(prev, scope, author, usher, schema, rt, data_hash);
+    rhex.intent.prev = prev;
+    rhex.intent.scope = scope;
+    rhex.intent.author = author;
+    rhex.intent.usher = usher;
+    rhex.intent.schema = schema;
+    rhex.intent.rt = rt;
+    rhex.intent.data_hash = data_hash;
     rhex.data = data_slice;
     println!("R⬢ crafted.");
     rhex.single_disk_put(&output);

@@ -23,14 +23,7 @@ impl Rhex {
             Some(schema) => schema,
             None => &"None".to_string(),
         };
-        let spacial = match &self.context.s {
-            Some(s) => format!(
-                "\"{}\": {}",
-                s.s_ref,
-                URL_SAFE_NO_PAD.encode(s.s_data.clone())
-            ),
-            None => "None".to_string(),
-        };
+
         let mut sigs = Vec::new();
         for sig in self.sigs.iter() {
             sigs.push(sig.print());
@@ -45,6 +38,26 @@ impl Rhex {
             None => "None".to_string(),
         };
         let data: RhexData = cbor2::from_slice(&self.data).unwrap();
+        let context = if self.context.is_none() {
+            "None".to_string()
+        } else {
+            let spacial = match &self.clone().context.unwrap().s {
+                Some(s) => format!(
+                    "\"{}\": {}",
+                    s.s_ref,
+                    URL_SAFE_NO_PAD.encode(s.s_data.clone())
+                ),
+                None => "None".to_string(),
+            };
+            format!(
+                "{{
+            \t\tat: {}
+            \t\ts: {}
+            \t}}",
+                &self.context.clone().unwrap().at,
+                spacial
+            )
+        };
 
         let output = format!(
             "Rhex: {{
@@ -59,10 +72,7 @@ impl Rhex {
     \t\tdata_hash: {},
     \t}},
     \tdata: {},
-    \tcontext: {{
-    \t\tat: {},
-    \t\ts: {},
-    \t}},
+    \tcontext: {}
     \tsigs: {},
     \tcurr: {},
 }}",
@@ -75,8 +85,7 @@ impl Rhex {
             schema,
             data_hash,
             data.print(),
-            self.context.at,
-            spacial,
+            context,
             sigs,
             curr
         );

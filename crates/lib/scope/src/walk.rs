@@ -79,7 +79,7 @@ impl Scope {
         }
         let mut pos = 0;
         for r in rhex {
-            let status = scope.final_check(r, &r.context.at)?;
+            let status = scope.final_check(&mut r.clone(), &r.context.clone().unwrap().at)?;
             if status[0] != CheckStatus::Success {
                 bail!(format!("Position: {}, Error: {:?}", pos, status[0]));
             }

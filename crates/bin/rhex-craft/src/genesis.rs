@@ -6,6 +6,7 @@ use iroh::PublicKey;
 use key::enclave::Enclave;
 use scope::rhex::{
     self,
+    context::RhexContext,
     data::RhexData,
     signature::{AgileKey, RhexSigAlgo::Ed25519, RhexSignature, RhexSignatureType},
 };
@@ -37,7 +38,6 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     hasher.update(&buf);
     let hash = hasher.finalize();
     // Build intent
-    rhex.intent.gen_nonce();
     rhex.intent.prev = None;
     rhex.intent.scope = "".to_string();
     rhex.intent.author = PublicKey::from_bytes(&key_conv)?;
@@ -47,8 +47,7 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     rhex.intent.data_hash = Some(*hash.as_bytes());
 
     // Add context since we are the usher too
-    rhex.context.at = 0;
-    rhex.context.s = None;
+    rhex.context = Some(RhexContext { at: 0, s: None });
 
     // Sign it like the dirty hoe we are.
     let key = AgileKey {

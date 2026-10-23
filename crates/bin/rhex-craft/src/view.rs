@@ -7,7 +7,7 @@ pub fn view(input: String) -> Result<()> {
     if input.ends_with(".rhex") {
         let rhex = rhex::Rhex::single_disk_get(&input);
         println!("{}", rhex.pretty_print());
-        let valid = rhex.validate();
+        let valid = rhex.validate()?;
         match valid {
             true => println!("✅ Valid"),
             false => println!("❌ Invalid"),
@@ -18,7 +18,7 @@ pub fn view(input: String) -> Result<()> {
         for r in rhex {
             println!("R⬢ #{} in chain:", count);
             println!("{}", r.pretty_print());
-            if r.validate() {
+            if r.validate()? {
                 println!("✅ Valid");
             } else {
                 println!("❌ Invalid");

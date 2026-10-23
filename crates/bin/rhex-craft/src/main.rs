@@ -6,6 +6,7 @@ mod build;
 mod cli;
 mod finalize;
 mod genesis;
+mod submit;
 mod view;
 
 fn main() {
@@ -41,5 +42,6 @@ fn main() {
         Commands::View { input } => {
             let _ = view::view(input);
         }
+        Commands::Submit { rbuild, state } => submit::submit(rbuild, state).unwrap(),
     }
 }

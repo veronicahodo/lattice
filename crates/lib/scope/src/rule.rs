@@ -26,6 +26,14 @@ impl Rule {
                         }
                     }
                 }
+            } else {
+                if &r == rt {
+                    for g in groups {
+                        if self.append.contains(g) {
+                            valid = true;
+                        }
+                    }
+                }
             }
         }
         Ok(valid)

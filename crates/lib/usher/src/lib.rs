@@ -1,4 +1,5 @@
 use anyhow::Result;
+use iroh::PublicKey;
 use rhex::{context::RhexContext, signature::RhexSignature};
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +12,7 @@ pub mod map;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Usher {
     pub name: Option<String>,
-    pub pk: [u8; 32],
+    pub pk: PublicKey,
     pub location: UsherLocation,
     pub last_updated: u64,
 }
@@ -20,13 +21,13 @@ impl Usher {
     pub fn new() -> Self {
         Self {
             name: None,
-            pk: [0; 32],
+            pk: PublicKey::from_bytes(&[0; 32]).unwrap(),
             location: UsherLocation::Unknown,
             last_updated: 0,
         }
     }
 
-    pub fn create(name: Option<String>, pk: [u8; 32], location: UsherLocation, now: u64) -> Self {
+    pub fn create(name: Option<String>, pk: PublicKey, location: UsherLocation, now: u64) -> Self {
         Self {
             name,
             pk,
@@ -40,11 +41,16 @@ impl Usher {
 pub struct UsherSigResponse {
     pub context: RhexContext,
     pub sig: RhexSignature,
+    pub appended: bool,
 }
 
 impl UsherSigResponse {
-    pub fn new(context: RhexContext, sig: RhexSignature) -> Self {
-        Self { context, sig }
+    pub fn new(context: RhexContext, sig: RhexSignature, appended: bool) -> Self {
+        Self {
+            context,
+            sig,
+            appended,
+        }
     }
 
     pub fn to_vec(&self) -> Result<Vec<u8>> {

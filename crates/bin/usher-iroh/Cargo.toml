@@ -10,12 +10,15 @@ key = { path = "../../lib/key" }
 iam = { path = "../../lib/iam" }
 transform = { path = "../../lib/transform" }
 util = { path = "../../lib/util" }
+time = { path = "../../lib/time" }
 clap = { workspace = true }
 iroh = { workspace = true }
+iroh-blobs = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 minicbor = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
+serde_bytes = { workspace = true }
 anyhow = { workspace = true }
 cbor2 = { workspace = true }

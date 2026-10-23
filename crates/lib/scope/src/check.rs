@@ -5,7 +5,7 @@ use iroh::PublicKey;
 use rhex::{
     Rhex,
     check::CheckStatus,
-    signature::RhexSignatureType::{Observer, Quorum},
+    signature::RhexSignatureType::{self, Observer, Quorum},
 };
 
 use crate::{Scope, ushers::UsherRole};
@@ -43,7 +43,7 @@ impl Scope {
     /// Checks to see if the `intent.nonce` has been reused for this
     /// Scope
     ///
-    pub fn check_nonce(self, nonce: [u8; 32], path: &PathBuf) -> Result<CheckStatus> {
+    pub fn check_nonce(self, nonce: [u8; 16], path: &PathBuf) -> Result<CheckStatus> {
         // skim for nonce reuse
         if self.check_nonce_reused(nonce, path).unwrap() {
             return Ok(CheckStatus::NonceReused);
@@ -56,12 +56,40 @@ impl Scope {
     /// at this coordinate.
     ///    
     pub fn check_rt_access(&self, rhex: &Rhex) -> Result<CheckStatus> {
-        let groups = self.member_of_at(rhex.intent.author.clone(), rhex.context.at.clone())?;
+        let groups = self.member_of_at(&rhex.intent.author, &rhex.context.clone().unwrap().at)?;
         if groups.len() == 0 {
             return Ok(CheckStatus::AccessDenied);
         }
-        let policy = self.get_policy_at(rhex.context.at.clone());
+        let time = if let Some(context) = &rhex.context {
+            context.at
+        } else {
+            time::get_current_time()
+        };
+        let policy = self.get_policy_at(&time);
         let submittable = policy.can_submit(&rhex.intent.rt, &groups);
+        if !submittable {
+            return Ok(CheckStatus::RtNotAllowed);
+        }
+        Ok(CheckStatus::Success)
+    }
+
+    pub fn check_rt_access_per(
+        &self,
+        rt: &String,
+        key: &PublicKey,
+        time: &Option<u64>,
+    ) -> Result<CheckStatus> {
+        let time = if let Some(time) = time {
+            time.clone()
+        } else {
+            time::get_current_time()
+        };
+        let groups = self.member_of_at(key, &time)?;
+        if groups.len() == 0 {
+            return Ok(CheckStatus::AccessDenied);
+        }
+        let policy = self.get_policy_at(&time);
+        let submittable = policy.can_submit(rt, &groups);
         if !submittable {
             return Ok(CheckStatus::RtNotAllowed);
         }
@@ -81,8 +109,8 @@ impl Scope {
         } else {
             &vec![]
         };
-        let policy = self.get_policy_at(time.clone());
-        let groups = self.member_of_at(rhex.intent.author.clone(), time.clone())?;
+        let policy = self.get_policy_at(time);
+        let groups = self.member_of_at(&rhex.intent.author, &time)?;
 
         // Get the window so we know if quorum sigs are within it
         let window = policy.get_window(&rhex.intent.rt, &groups)?;
@@ -94,10 +122,11 @@ impl Scope {
         for sig in rhex.sigs.iter() {
             match sig.t {
                 Quorum(time) | Observer(time) => {
-                    if time < rhex.context.at {
+                    let rhex_time = rhex.context.clone().unwrap().at;
+                    if time < rhex_time {
                         return Ok(CheckStatus::SignatureInvalid(pos));
                     }
-                    if (time - rhex.context.at) < window {
+                    if (time - rhex_time) < window {
                         match sig.t {
                             Quorum(_) => {
                                 if quorum_ushers.contains(&PublicKey::from_bytes(
@@ -146,7 +175,7 @@ impl Scope {
     ///
     pub fn check_usher(&self, rhex: &Rhex) -> Result<CheckStatus> {
         // see if usher specified is available.
-        let current_usher = self.ushers_at(rhex.context.at.clone())?;
+        let current_usher = self.ushers_at(rhex.context.clone().unwrap().at)?;
         // We can only get away with a blind unwrap here because a scope
         // without actors is an invalid scope and cannot be created
         let usher = current_usher
@@ -166,9 +195,9 @@ impl Scope {
     pub fn check_time_reversal(self, rhex: &Rhex) -> Result<CheckStatus> {
         // Have we gone backwards in time?
         let latest = self.latest_time();
-        if latest > rhex.context.at {
+        if latest > rhex.context.clone().unwrap().at {
             return Ok(CheckStatus::TimeReversal {
-                presented: rhex.context.at.clone(),
+                presented: rhex.context.clone().unwrap().at,
                 prev: latest,
             });
         }
@@ -180,12 +209,26 @@ impl Scope {
     /// each Rhex field for validity. (Minus nonce reuse, because that
     /// actually calls for pulling the whole chain in, which is not
     /// something we want on quick checks)
-    pub fn full_check(&self, rhex: &Rhex) -> Result<Vec<CheckStatus>> {
+    pub fn full_check(&self, rhex: &mut Rhex) -> Result<Vec<CheckStatus>> {
         let mut outputs = Vec::new();
-        outputs.push(rhex.check_data_size()?);
+        // outputs.push(rhex.check_data_size()?);
         outputs.push(rhex.check_schema()?);
         outputs.push(self.check_same_scope(rhex)?);
+        // FIXME: check_priv needs to be ok with certain requests
+        // having no prev set.
         outputs.push(self.check_prev(rhex)?);
+        // Changed this up... I think it's redundant with another
+        // function but I'm pressed for time so we're just gonna do it
+        // here:
+        let authors = rhex.get_sigs(&RhexSignatureType::Author)?;
+        let time = time::get_current_time();
+        for a in authors {
+            outputs.push(self.check_rt_access_per(
+                &rhex.intent.rt,
+                &PublicKey::from_bytes(&a.pk.key_bytes.try_into().unwrap())?,
+                &Some(time),
+            )?);
+        }
         outputs.push(self.check_rt_access(rhex)?);
         outputs.push(self.check_usher(rhex)?);
         for i in 0..rhex.sigs.len() {
@@ -205,13 +248,16 @@ impl Scope {
     /// This is similar to `self.full_check` except this also checks
     /// `rhex.curr` to see if it's correct and the overall record size
     ///
-    pub fn final_check(&self, rhex: &Rhex, time: &u64) -> Result<Vec<CheckStatus>> {
+    pub fn final_check(&self, rhex: &mut Rhex, time: &u64) -> Result<Vec<CheckStatus>> {
         let mut outputs = Vec::new();
-        let mut full = self.full_check(rhex)?;
-        outputs.append(&mut full);
+        let full = self.full_check(rhex)?;
+        outputs.extend(full);
         outputs.push(self.check_quorum_and_observers(rhex, time)?);
         outputs.push(rhex.check_curr_hash()?);
-        outputs.push(rhex.check_total_size()?);
+        // FIXME: It *SHOULD* check the total size, but since data
+        // is only presented to the usher, we can't use this for
+        // quorum otherwise.
+        //outputs.push(rhex.check_total_size()?);
 
         outputs.retain(|o| *o != CheckStatus::Success);
 

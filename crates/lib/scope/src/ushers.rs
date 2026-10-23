@@ -100,7 +100,7 @@ impl Scope {
         for role in roles_array {
             let branch = self.ushers.entry(role).or_insert_with(HashMap::new);
             let status = UsherStatus {
-                issued: rhex.context.at.clone(),
+                issued: rhex.context.clone().unwrap().at,
                 eff,
                 exp,
                 by: rhex.intent.author.clone(),
@@ -147,9 +147,10 @@ impl Scope {
             };
 
             let list = self.ushers.get_mut(&lookup);
+            let rhex_time = rhex.context.clone().unwrap().at;
             let status = UsherStatus {
-                issued: rhex.context.at.clone(),
-                eff: rhex.context.at.clone(),
+                issued: rhex_time,
+                eff: rhex_time,
                 exp: 1_000_000_000_000_000,
                 by: rhex.intent.author.clone(),
             };

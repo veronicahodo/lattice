@@ -9,3 +9,4 @@ key = { path = "../../lib/key" }
 rhex = { path = "../../lib/rhex" }
 anyhow = { workspace = true }
 cbor2 = { workspace = true }
+iroh = { workspace = true }

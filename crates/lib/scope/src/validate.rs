@@ -10,7 +10,7 @@ impl Scope {
     /// Quickly skims the chain to see if this nonce has been used
     /// before. Returns `true` if it already exists in the scope
     ///
-    pub fn check_nonce_reused(&self, nonce: [u8; 32], scope_path: &PathBuf) -> Result<bool> {
+    pub fn check_nonce_reused(&self, nonce: [u8; 16], scope_path: &PathBuf) -> Result<bool> {
         let rhex = Rhex::chain_from_disk(scope_path)?;
         let used = rhex
             .iter()

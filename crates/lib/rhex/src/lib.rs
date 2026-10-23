@@ -1,3 +1,4 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 /*
     Structure: Rhex
@@ -30,6 +31,7 @@ pub mod check;
 pub mod context;
 pub mod data;
 pub mod intent;
+pub mod iroh;
 pub mod print;
 pub mod respond;
 pub mod signature;
@@ -40,7 +42,7 @@ pub struct Rhex {
     pub magic: [u8; 6],
     pub intent: RhexIntent,
     pub data: Vec<u8>,
-    pub context: RhexContext,
+    pub context: Option<RhexContext>,
     pub sigs: Vec<RhexSignature>,
     pub curr: Option<[u8; 32]>,
 }
@@ -55,7 +57,7 @@ impl Rhex {
             magic: Rhex::MAGIC,
             intent: RhexIntent::new(),
             data: vec![],
-            context: RhexContext { at: 0, s: None },
+            context: None,
             sigs: Vec::new(),
             curr: None,
         }
@@ -63,24 +65,23 @@ impl Rhex {
 
     pub fn get_hash(&self, sig_type: RhexSignatureType) -> [u8; 32] {
         match sig_type {
-            RhexSignatureType::Author => {
-                let mut hasher = blake3::Hasher::new();
-                hasher.update(b"RHEX_AUTHOR_SIG_0");
-                hasher.update(&self.intent.get_hash().clone());
-                hasher.finalize().into()
-            }
+            RhexSignatureType::Author => self.intent.get_sig_hash(),
             RhexSignatureType::Usher => {
                 let mut hasher = blake3::Hasher::new();
+                let author_hash = self.get_sig_group_hash(&RhexSignatureType::Author);
+
                 hasher.update(b"RHEX_USHER_SIG_0");
-                hasher.update(&self.sigs[0].sig);
-                hasher.update(&self.context.get_hash());
+                hasher.update(&author_hash);
+                hasher.update(&self.context.clone().unwrap().get_hash());
                 hasher.finalize().into()
             }
             RhexSignatureType::Quorum(t) | RhexSignatureType::Observer(t) => {
                 let mut hasher = blake3::Hasher::new();
+                let author_hash = self.get_sig_group_hash(&RhexSignatureType::Author);
+                let usher_hash = self.get_sig_group_hash(&RhexSignatureType::Usher);
                 hasher.update(b"RHEX_OBSERVED_SIG_0");
-                hasher.update(&self.sigs[0].sig);
-                hasher.update(&self.sigs[1].sig);
+                hasher.update(&author_hash);
+                hasher.update(&usher_hash);
                 // This is what google said to do, I feel like it should
                 // be little endian but what do I know?
                 hasher.update(&t.to_be_bytes());
@@ -90,15 +91,33 @@ impl Rhex {
         }
     }
 
-    /// Sorts signatures 2..n
-    /// First two are fixed (Author, Usher), but the rest are stored
-    /// byte sorted by the signature itself.
+    /// Sorts signatures by ranking (signing order, really), first by
+    /// key type and then by key bytes itself.
     pub fn sort_sigs(&mut self) {
-        let author = self.sigs.remove(0);
-        let usher = self.sigs.remove(0);
-        self.sigs.sort_by(|a, b| a.sig.cmp(&b.sig));
-        self.sigs.insert(0, author);
-        self.sigs.insert(1, usher);
+        self.sigs.sort_by(|a, b| {
+            a.t.sort_rank()
+                .cmp(&b.t.sort_rank())
+                .then_with(|| a.pk.key_bytes.cmp(&b.pk.key_bytes))
+        });
+    }
+
+    pub fn to_sorted(input: &Vec<RhexSignature>) -> Vec<RhexSignature> {
+        let mut sigs = input.clone();
+        sigs.sort_by(|a, b| {
+            a.t.sort_rank()
+                .cmp(&b.t.sort_rank())
+                .then_with(|| a.pk.key_bytes.cmp(&b.pk.key_bytes))
+        });
+        sigs
+    }
+
+    pub fn get_sig_group_hash(&self, sig_type: &RhexSignatureType) -> [u8; 32] {
+        let group = self.clone().get_sigs(sig_type).unwrap_or(vec![]);
+        let mut hasher = blake3::Hasher::new();
+        for g in group {
+            hasher.update(&g.sig);
+        }
+        hasher.finalize().into()
     }
 
     pub fn to_vec(&self) -> Vec<u8> {
@@ -114,11 +133,12 @@ impl Rhex {
     /// Calculates the current hash of the record
     /// H(label | intent | context | sigs)
     pub fn calc_curr(&self) -> [u8; 32] {
+        let sigs = Self::to_sorted(&self.sigs);
         let mut hasher = blake3::Hasher::new();
         hasher.update(b"RHEX_CURR_HASH_0");
         hasher.update(&self.intent.get_hash());
-        hasher.update(&self.context.get_hash());
-        let sigs_bin = cbor2::to_canonical_vec(&self.sigs);
+        hasher.update(&self.context.clone().unwrap().get_hash());
+        let sigs_bin = cbor2::to_canonical_vec(&sigs);
         hasher.update(&sigs_bin.unwrap());
         hasher.finalize().into()
     }
@@ -140,13 +160,13 @@ impl Rhex {
         hash == self.curr.unwrap()
     }
 
-    pub fn validate(&self) -> bool {
+    pub fn validate(&self) -> Result<bool> {
         let mut valid = true;
-        for i in 0..self.sigs.len() {
-            let sig_ok = self.validate_sig(i);
+        for sig in &self.sigs {
+            let sig_ok = sig.validate(&self.get_hash(sig.t))?;
             valid = valid && sig_ok;
         }
         valid = valid && self.validate_curr();
-        valid
+        Ok(valid)
     }
 }

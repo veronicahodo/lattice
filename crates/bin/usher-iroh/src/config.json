@@ -1,0 +1,13 @@
+{
+    "config": "./config.json",
+    "bind": "0.0.0.0",
+    "port": 1984,
+    "root": "./",
+    "enclave": "./keys/",
+    "i_am": "./iam.cbor",
+    "scopes": "./scopes/",
+    "ushers": "./ushers.cbor",
+    "trans_registry": "./trans.cbor",
+    "trans_store": "./trans/",
+    "bootstrap": "./bootstrap/"
+}
