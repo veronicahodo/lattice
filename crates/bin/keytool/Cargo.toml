@@ -12,3 +12,4 @@ base64 = { workspace = true }
 anyhow = { workspace = true }
 hex = { workspace = true }
 cbor2 = { workspace = true }
+iroh = { workspace = true }

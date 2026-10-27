@@ -82,10 +82,11 @@ impl RhexSignatureType {
 }
 
 impl Rhex {
-    pub fn get_sigs(&mut self, sig_type: &RhexSignatureType) -> Result<Vec<RhexSignature>> {
-        self.sort_sigs();
+    pub fn get_sigs(&self, sig_type: &RhexSignatureType) -> Result<Vec<RhexSignature>> {
+        let mut rhex = self.clone();
+        rhex.sort_sigs();
         let mut output = Vec::new();
-        for sig in &self.sigs {
+        for sig in &rhex.sigs {
             if &sig.t == sig_type {
                 output.push(sig.clone())
             }

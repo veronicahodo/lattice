@@ -16,3 +16,6 @@ blake3 = { workspace = true }
 hex = { workspace = true }
 cbor2 = { workspace = true }
 iroh = { workspace = true }
+comms = { path = "../../lib/comms" }
+tokio = { workspace = true }
+time = { path = "../../lib/time" }

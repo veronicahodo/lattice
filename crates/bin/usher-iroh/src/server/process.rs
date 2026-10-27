@@ -1,7 +1,5 @@
 use anyhow::Result;
 use iroh::endpoint::{RecvStream, SendStream};
-use lattice::Rhex;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use crate::{
     comms::chatter::ChatterRequest, config::UsherIrohConfig, process, server::appstate::AppState,
@@ -13,23 +11,24 @@ pub async fn process_stream(
     appstate: &mut AppState,
     config: &UsherIrohConfig,
 ) -> Result<()> {
-    // Length-prefixed framing
-    let len = recv.read_u32().await? as usize;
-    let mut buffer = vec![0u8; len];
-    recv.read_exact(&mut buffer).await?;
+    let max_size = 50 * 1024 * 1024;
+
+    // Read all incoming bytes until the client calls finish()
+    let buffer = recv.read_to_end(max_size).await?;
 
     let requests: Vec<ChatterRequest> = cbor2::from_slice(&buffer)?;
     println!("Received {} R⬢ requests", requests.len());
 
-    let out_intents = process::process_rhex(requests, config, appstate).await?;
+    let response = match process::process_rhex(requests, config, appstate).await {
+        Ok(intents) => intents,
+        Err(e) => {
+            eprintln!("Processing error: {e}");
+            return Err(e.into());
+        }
+    };
+    let response_bytes = cbor2::to_canonical_vec(&response)?;
 
-    // stub
-    let responses: Vec<Rhex> = Vec::new();
-
-    let response_bytes = cbor2::to_canonical_vec(&responses)?;
-
-    // Write length-prefixed response back
-    send.write_u32(response_bytes.len() as u32).await?;
+    // Write response and finish (no length prefix needed)
     send.write_all(&response_bytes).await?;
     send.finish()?;
 

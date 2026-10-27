@@ -43,7 +43,9 @@ pub fn build(
     let author = base64::engine::general_purpose::URL_SAFE_NO_PAD
         .decode(author)
         .unwrap();
+    println!("{}: {:?}", author.len(), author);
     let author = PublicKey::from_bytes(author[..].try_into()?)?;
+    println!("Author stored");
     let usher = base64::engine::general_purpose::URL_SAFE_NO_PAD
         .decode(usher)
         .unwrap();
@@ -56,6 +58,7 @@ pub fn build(
     rhex.intent.rt = rt;
     rhex.intent.data_hash = data_hash;
     rhex.data = data_slice;
+    println!("{}", rhex.pretty_print());
     println!("R⬢ crafted.");
     rhex.single_disk_put(&output);
     println!("Wrote to {}.", output);

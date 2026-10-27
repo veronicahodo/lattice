@@ -2,7 +2,7 @@ use std::fs;
 
 use anyhow::{Ok, Result, bail};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
-use iroh::PublicKey;
+use iroh::{PublicKey, SecretKey};
 
 use crate::{Key, KeyInstanced};
 
@@ -29,9 +29,9 @@ impl Enclave {
     /// # disk_get(pk)
     /// Pulls a single key from disk.
     ///
-    pub fn disk_get(&self, pk: [u8; 32]) -> Result<Key> {
+    pub fn disk_get(&self, pk: &PublicKey) -> Result<Key> {
         let data = std::fs::read(format!("{}/{}.key", self.path, hex::encode(&pk))).unwrap();
-        let key = Key::from_vec(&data)?;
+        let key = Key::from_slice(&data)?;
         Ok(key)
     }
 
@@ -42,15 +42,15 @@ impl Enclave {
     /// disk and are loaded as needed, so to "put" to disk would just
     /// be copying a file.
     ///
-    pub fn disk_put(&self, pk: [u8; 32]) {
+    pub fn disk_put(&self, pk: [u8; 32]) -> Result<()> {
         let key = self.keys.iter().find(|c| **c == pk);
         if key.is_none() {
-            return;
+            bail!("Couldn't find key");
         }
         let key = key.unwrap();
-        let mut data = Vec::new();
-        minicbor::encode(key, &mut data).unwrap();
+        let data = cbor2::to_canonical_vec(key)?;
         let _ = std::fs::write(format!("{}/{}.key", self.path, hex::encode(&pk)), &data);
+        Ok(())
     }
 
     /// # populate()
@@ -72,9 +72,9 @@ impl Enclave {
             let hexstr = path.file_name().unwrap().to_str().unwrap();
             let hex = hexstr.replace(".key", "");
 
-            let pk = hex::decode(hex).unwrap().try_into().unwrap();
-            let key = self.disk_get(pk)?;
-            self.keys.push(key.pk.unwrap());
+            let pk = PublicKey::from_bytes(&hex::decode(hex).unwrap().try_into().unwrap())?;
+            let key = self.disk_get(&pk)?;
+            self.keys.push(key.pk.unwrap().as_bytes().clone());
         }
         Ok(())
     }
@@ -82,13 +82,14 @@ impl Enclave {
     /// # sign(pk, msg)
     /// Signs `msg` with `pk` and returns the signature.
     ///
-    pub fn sign(&self, pk: &[u8; 32], msg: &[u8]) -> Result<[u8; 64]> {
-        let key = self.keys.iter().find(|c| *c == pk);
+    pub fn sign(&self, pk: &PublicKey, msg: &[u8]) -> Result<[u8; 64]> {
+        // TODO: This feels hella wrong that we are dereferencing so much
+        let key = self.keys.iter().find(|c| **c == **pk);
         if key.is_none() {
             return Err(anyhow::anyhow!("Key not found"));
         }
 
-        let key = self.disk_get(*pk)?;
+        let key = self.disk_get(pk)?;
         let sig = key.sign(msg);
         Ok(sig)
     }
@@ -103,22 +104,20 @@ impl Enclave {
         expires: Option<u64>,
     ) -> Result<Key> {
         let mut key = Key::generate(name, time, expires);
-        let mut buf = Vec::new();
-        minicbor::encode(&key, &mut buf)?;
-        let data = buf;
+        let data = cbor2::to_canonical_vec(&key)?;
         std::fs::write(
             format!("{}/{}.key", self.path, hex::encode(&key.pk.unwrap())),
             &data,
         )?;
         key.sk = None;
-        self.keys.push(key.pk.unwrap());
+        self.keys.push(key.pk.unwrap().as_bytes().clone());
         Ok(key)
     }
 
     /// # show_key(pk, show_sk)
     /// Shows the key data stored in the file system.
     ///
-    pub fn show_key(&self, pk: [u8; 32], show_sk: bool) -> Result<String> {
+    pub fn show_key(&self, pk: &PublicKey, show_sk: bool) -> Result<String> {
         let key = self.disk_get(pk)?;
         Ok(key.pretty_format(show_sk))
     }
@@ -128,20 +127,19 @@ impl Enclave {
     ///
     pub fn import(
         &mut self,
-        sk: [u8; 32],
-        name: Option<String>,
-        time: Option<u64>,
-        expires: Option<u64>,
+        sk: &SecretKey,
+        name: &Option<String>,
+        time: &Option<u64>,
+        expires: &Option<u64>,
     ) -> Result<Key> {
         let instanced = if time.is_some() {
             KeyInstanced::Imported(time.unwrap())
         } else {
             KeyInstanced::Unknown
         };
-        let key = Key::new(sk, name, instanced, expires);
-        self.keys.push(key.pk.unwrap());
-        let mut buf = Vec::new();
-        minicbor::encode(&key, &mut buf)?;
+        let key = Key::new(sk, name, &instanced, expires);
+        self.keys.push(key.pk.unwrap().as_bytes().clone());
+        let buf = cbor2::to_canonical_vec(&key)?;
         fs::write(
             format!(
                 "{}/{}.key",
@@ -167,5 +165,10 @@ impl Enclave {
             }
         }
         Ok(())
+    }
+
+    pub fn export(&self, key: &PublicKey) -> Result<SecretKey> {
+        let keydata = self.disk_get(key)?;
+        Ok(keydata.sk.unwrap().clone())
     }
 }

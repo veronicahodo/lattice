@@ -30,3 +30,6 @@ target
 *.rhex
 # Ignore the testing dir
 /testing
+# For some fucking reason VS Code hates me and I had to enable this
+# dir for it to stop freaking out
+/ra-target

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use base64::engine::{Engine, general_purpose::URL_SAFE_NO_PAD};
+use iroh::PublicKey;
 use key::enclave;
 use rhex::signature::{AgileKey, RhexSigAlgo::Ed25519, RhexSignature};
 
@@ -31,7 +32,7 @@ pub fn sign(
     enclave.populate()?;
     let key = URL_SAFE_NO_PAD.decode(key).unwrap();
     let key: [u8; 32] = key.try_into().unwrap();
-    let sig = enclave.sign(&key.clone(), &hash)?;
+    let sig = enclave.sign(&PublicKey::from_bytes(&key)?, &hash)?;
     // Add the signature to the rhex
     rhex.sigs.push(RhexSignature {
         pk: AgileKey {

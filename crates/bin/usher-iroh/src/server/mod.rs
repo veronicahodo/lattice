@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use iam::IAm;
-use iroh::{Endpoint, endpoint::presets::N0};
+use iroh::{Endpoint, PublicKey, endpoint::presets::N0};
 use lattice::usher::{self, UsherMap, map};
 use tokio::sync::RwLock;
 use transform::registry::TransformRegistry;
@@ -49,6 +50,7 @@ pub async fn run(config: Arc<UsherIrohConfig>) -> Result<()> {
         || IAm::disk_from(&config.i_am),
     )?;
     let enclave = init_enclave(&config, &iam)?;
+    let secret = enclave.export(&PublicKey::from_bytes(&config.usher_key)?)?;
 
     // Build shared state
     let appstate = AppState {
@@ -61,9 +63,13 @@ pub async fn run(config: Arc<UsherIrohConfig>) -> Result<()> {
 
     // Set up listener
     let endpoint = Endpoint::builder(N0)
+        .secret_key(secret)
         .alpns(vec![PROTOCOL_ALPN.to_vec()])
         .bind()
         .await?;
+    let addr = endpoint.addr();
+    println!("{:?}", addr);
+    println!("base64: {}", URL_SAFE_NO_PAD.encode(addr.id.as_bytes()));
 
     // Handle the connection
     while let Some(incoming) = endpoint.accept().await {

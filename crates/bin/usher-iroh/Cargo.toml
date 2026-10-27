@@ -22,3 +22,6 @@ serde = { workspace = true }
 serde_bytes = { workspace = true }
 anyhow = { workspace = true }
 cbor2 = { workspace = true }
+base64 = { workspace = true }
+rand = { workspace = true }
+zeroize = { workspace = true }

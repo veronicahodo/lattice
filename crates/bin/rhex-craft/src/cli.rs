@@ -47,9 +47,11 @@ pub enum Commands {
         input: String,
     },
     Submit {
+        #[arg(long)]
+        rhex: String,
         #[arg(short, long)]
-        rbuild: String,
+        address: Option<String>,
         #[arg(short, long)]
-        state: String,
+        request: Option<String>,
     },
 }

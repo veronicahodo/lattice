@@ -17,7 +17,7 @@ struct Cli {
     #[arg(short, long, global = true)]
     key: Option<String>,
 
-    #[arg(short, long, global = true)]
+    #[arg(long, global = true)]
     enclave_path: Option<String>,
 
     #[command(subcommand)]
@@ -65,7 +65,7 @@ enum Commands {
         name: Option<String>,
         #[arg(short, long)]
         time: Option<u64>,
-        #[arg(short, long)]
+        #[arg(long)]
         expires: Option<u64>,
     },
     Import {
@@ -81,10 +81,6 @@ enum Commands {
 fn main() {
     println!("Lattice Key Tool v{}", env!("CARGO_PKG_VERSION"));
     let cli = Cli::parse();
-    if cli.key.is_none() {
-        println!("Must specify key in base64 format (-k)");
-        return;
-    }
     let enclave_path = match cli.enclave_path {
         Some(ep) => ep,
         None => "./keys".to_string(),
@@ -96,6 +92,11 @@ fn main() {
             output,
             delta,
         } => {
+            if cli.key.is_none() {
+                println!("Must specify key in base64 format (-k)");
+                return;
+            }
+
             let _ = sign::sign(
                 &cli.key.unwrap(),
                 &enclave_path,
@@ -121,14 +122,19 @@ fn main() {
             time,
             expires,
         } => {
-            vanity::vanity(sigil_prefix, name, time, expires, cli.key.unwrap());
+            let _ = vanity::vanity(sigil_prefix, name, time, expires, cli.key.unwrap());
         }
         Commands::Import {
             name,
             time,
             expires,
         } => {
-            import::import(enclave_path, name, cli.key.unwrap(), time, expires);
+            if cli.key.is_none() {
+                println!("Must specify key in base64 format (-k)");
+                return;
+            }
+
+            let _ = import::import(&enclave_path, &name, &cli.key.unwrap(), &time, &expires);
         }
     }
 }

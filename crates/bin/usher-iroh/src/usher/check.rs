@@ -1,10 +1,6 @@
 use iam::IAm;
 use iroh::PublicKey;
-use lattice::{
-    Rhex,
-    rhex::{check::CheckStatus, signature::RhexSignatureType},
-    scope::Scope,
-};
+use lattice::{Rhex, rhex::check::CheckStatus, scope::Scope};
 
 /// # am_i(iam, key)
 ///
@@ -31,50 +27,6 @@ pub fn control_scope(scope: Option<&Scope>) -> Vec<CheckStatus> {
     } else {
         vec![CheckStatus::Success]
     }
-}
-
-/// # check_authors(rhex)
-///
-/// This steps each author sig in the R⬢ to make sure it is a) valid,
-/// and b) has authority to add that record type to the scope.
-///
-pub fn check_authors(rhex: &mut Rhex, scope: &Scope) -> Vec<CheckStatus> {
-    let mut output = Vec::new();
-    let time = time::get_current_time();
-    let mut pos: u8 = 0;
-
-    let author_sigs = rhex.get_sigs(&RhexSignatureType::Author).unwrap();
-    if author_sigs.len() < rhex.sigs.len() {
-        return vec![CheckStatus::WrongStage {
-            attempted: RhexSignatureType::Usher,
-        }];
-    }
-
-    for sig in &rhex.sigs {
-        if sig.t != RhexSignatureType::Author {
-            output.push(CheckStatus::SignatureInvalid(pos));
-        } else {
-            let valid = sig
-                .validate(&rhex.get_hash(RhexSignatureType::Author))
-                .unwrap();
-            if !valid {
-                output.push(CheckStatus::SignatureInvalid(pos));
-            } else {
-                output.push(
-                    scope
-                        .check_rt_access_per(
-                            &rhex.intent.rt,
-                            &PublicKey::from_bytes(&sig.pk.key_bytes.clone().try_into().unwrap())
-                                .unwrap(),
-                            &Some(time),
-                        )
-                        .unwrap(),
-                );
-            }
-        }
-        pos += 1;
-    }
-    output
 }
 
 /// # get_ko(lattice, rhex)

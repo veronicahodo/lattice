@@ -20,6 +20,7 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     let mut rhex = rhex::Rhex::new();
     //let key = key::Key::disk_get(&key);
     let key_conv: [u8; 32] = URL_SAFE_NO_PAD.decode(key)?.try_into().unwrap();
+    let key_conv = PublicKey::from_bytes(&key_conv)?;
     let mut enclave = Enclave::new(Some(&enclave_path));
     let _ = enclave.populate();
     let binary_vec = vec![key_conv.clone()];
@@ -31,7 +32,7 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     // Build data
     let data = RhexData::Mixed {
         meta: json.as_bytes().to_vec(),
-        binary: binary_vec.as_flattened().to_vec(),
+        binary: cbor2::to_canonical_vec(&binary_vec)?,
     };
     let buf = cbor2::to_canonical_vec(&data)?;
     let mut hasher = blake3::Hasher::new();
@@ -52,7 +53,7 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     // Sign it like the dirty hoe we are.
     let key = AgileKey {
         algo: Ed25519,
-        key_bytes: key_conv.try_into().unwrap(),
+        key_bytes: key_conv.as_bytes().try_into().unwrap(),
     };
     rhex.sigs.push(RhexSignature {
         pk: key.clone(),

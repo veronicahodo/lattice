@@ -96,6 +96,48 @@ impl Scope {
         Ok(CheckStatus::Success)
     }
 
+    /// # check_authors(self, rhex, time)
+    ///
+    /// Checks to make sure each author has valid access to the scope
+    /// at that time
+    ///
+    pub fn check_authors(&self, rhex: &Rhex, time: &u64) -> Result<Vec<CheckStatus>> {
+        let mut output = Vec::new();
+        let mut pos: u8 = 0;
+
+        let author_sigs = rhex.get_sigs(&RhexSignatureType::Author).unwrap();
+        if author_sigs.len() < rhex.sigs.len() {
+            return Ok(vec![CheckStatus::WrongStage {
+                attempted: RhexSignatureType::Usher,
+            }]);
+        }
+
+        for sig in &rhex.sigs {
+            if sig.t != RhexSignatureType::Author {
+                output.push(CheckStatus::SignatureInvalid(pos));
+            } else {
+                let valid = sig
+                    .validate(&rhex.get_hash(RhexSignatureType::Author))
+                    .unwrap();
+                if !valid {
+                    output.push(CheckStatus::SignatureInvalid(pos));
+                } else {
+                    output.push(
+                        self.check_rt_access_per(
+                            &rhex.intent.rt,
+                            &PublicKey::from_bytes(&sig.pk.key_bytes.clone().try_into().unwrap())
+                                .unwrap(),
+                            &Some(time.clone()),
+                        )
+                        .unwrap(),
+                    );
+                }
+            }
+            pos += 1;
+        }
+        Ok(output)
+    }
+
     /// # check_quorum
     ///
     /// Checks the quorum count, and then iterates over the sigs to
@@ -220,16 +262,8 @@ impl Scope {
         // Changed this up... I think it's redundant with another
         // function but I'm pressed for time so we're just gonna do it
         // here:
-        let authors = rhex.get_sigs(&RhexSignatureType::Author)?;
         let time = time::get_current_time();
-        for a in authors {
-            outputs.push(self.check_rt_access_per(
-                &rhex.intent.rt,
-                &PublicKey::from_bytes(&a.pk.key_bytes.try_into().unwrap())?,
-                &Some(time),
-            )?);
-        }
-        outputs.push(self.check_rt_access(rhex)?);
+        outputs.extend(self.check_authors(rhex, &time)?);
         outputs.push(self.check_usher(rhex)?);
         for i in 0..rhex.sigs.len() {
             outputs.push(rhex.check_sig(i)?);

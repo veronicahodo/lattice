@@ -75,16 +75,13 @@ impl Rhex {
                 hasher.update(&self.context.clone().unwrap().get_hash());
                 hasher.finalize().into()
             }
-            RhexSignatureType::Quorum(t) | RhexSignatureType::Observer(t) => {
+            RhexSignatureType::Quorum(_) | RhexSignatureType::Observer(_) => {
                 let mut hasher = blake3::Hasher::new();
                 let author_hash = self.get_sig_group_hash(&RhexSignatureType::Author);
                 let usher_hash = self.get_sig_group_hash(&RhexSignatureType::Usher);
                 hasher.update(b"RHEX_OBSERVED_SIG_0");
                 hasher.update(&author_hash);
                 hasher.update(&usher_hash);
-                // This is what google said to do, I feel like it should
-                // be little endian but what do I know?
-                hasher.update(&t.to_be_bytes());
                 hasher.finalize().into()
             }
             RhexSignatureType::Other => unimplemented!(),

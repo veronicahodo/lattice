@@ -9,7 +9,8 @@ mod genesis;
 mod submit;
 mod view;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("Lattice R⬢ Crafting Tool {}", env!("CARGO_PKG_VERSION"));
     let cli = cli::Cli::parse();
     match cli.command {
@@ -23,7 +24,10 @@ fn main() {
             data,
             output,
         } => {
-            let _ = build::build(prev, scope, author, usher, schema, rt, data, output);
+            let status = build::build(prev, scope, author, usher, schema, rt, data, output);
+            if let Err(e) = status {
+                eprintln!("{e}");
+            }
         }
         Commands::Finalize {
             input,
@@ -42,6 +46,15 @@ fn main() {
         Commands::View { input } => {
             let _ = view::view(input);
         }
-        Commands::Submit { rbuild, state } => submit::submit(rbuild, state).unwrap(),
+        Commands::Submit {
+            rhex,
+            address,
+            request,
+        } => {
+            let status = submit::submit(rhex, address, request).await;
+            if let Err(s) = status {
+                println!("{:?}", s);
+            }
+        }
     }
 }

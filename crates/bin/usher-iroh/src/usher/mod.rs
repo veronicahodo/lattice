@@ -84,7 +84,11 @@ fn run_checks(
     let scope = lattice.scopes.get(&rhex.intent.scope);
     check::control_scope(scope).check_and_push_into(&mut output)?;
     let scope = scope.unwrap();
-    check::check_authors(rhex, scope).check_and_push_into(&mut output)?;
+    let time = time::get_current_time();
+    scope
+        .check_authors(rhex, &time)
+        .unwrap_or_else(|_| vec![CheckStatus::SignatureInvalid(0)])
+        .check_and_push_into(&mut output)?;
     scope
         .full_check(rhex)
         .unwrap()

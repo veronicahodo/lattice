@@ -32,11 +32,17 @@ pub async fn process_rhex(
             .as_millis() as i64;
 
         let reponse = match c.request {
+            // *****************************************************
+            // **** Author Sign                                 ****
+            // *****************************************************
             // Author Sign is ABSOLUTELY FUCKING BROKEN! See FIXME: entries
             // in /usher-iroh/src/author/mod.rs
             ChatterRequestType::AuthorSign { intent, token } => {
                 sign_as_author(&intent, &token, &enclave_guard)?
             }
+            // *****************************************************
+            // **** Usher Sign                                  ****
+            // *****************************************************
             ChatterRequestType::UsherSign { intent, sigs } => usher::sign_as_usher(
                 &intent,
                 &sigs,
@@ -45,11 +51,17 @@ pub async fn process_rhex(
                 &trans_reg_guard,
                 &lattice_guard,
             )?,
+            // *****************************************************
+            // **** Quorum Sign                                 ****
+            // *****************************************************
             ChatterRequestType::QuorumSign {
                 intent,
                 context,
                 sigs,
-            } => quorum::sign_as_quorum(&intent, &context, &sigs)?,
+            } => quorum::sign_as_quorum(&intent, &context, &sigs, &lattice_guard)?,
+            // *****************************************************
+            // **** Observer Sign                               ****
+            // *****************************************************
             ChatterRequestType::ObserverSign(bin) => {
                 let response = ChatterResponse {
                     version: 0,
@@ -65,6 +77,9 @@ pub async fn process_rhex(
                 };
                 response
             }
+            // *****************************************************
+            // **** Submit                                      ****
+            // *****************************************************
             ChatterRequestType::Submit(r) => {
                 let response = ChatterResponse {
                     version: 0,
@@ -76,54 +91,6 @@ pub async fn process_rhex(
         };
 
         output.push(reponse);
-
-        /*let outbound: Vec<Rhex> = match stage {
-            0 => {
-                // Alright... well, we have zero sigs, which sounds
-                // like we might be a remote node looking to get the
-                // "home base" to sign off on it.
-
-                // ... but for now we just reject
-                let out_rhex = bps_response(
-                    &r,
-                    &UsherAction::Rejected,
-                    &vec![CheckStatus::SignatureInvalid(0)],
-                    &enclave_guard,
-                    &None,
-                    0,
-                )?;
-                vec![out_rhex]
-            }
-            1 => {
-                // SHOULD be an author signed R⬢
-                // This could be a multitude of things, but they are usually
-                // one off requests OR the beginning of permanent submission
-                let r_out = sign_as_usher(
-                    &r,
-                    &enclave_guard,
-                    &iam_guard,
-                    &trans_reg_guard,
-                    &lattice_guard,
-                )?;
-                r_out.unwrap_or_else(|| vec![])
-            }
-            2 => {
-                // Looking for quorum
-                let r_out = sign_as_quorum(
-                    &r,
-                    &enclave_guard,
-                    &trans_reg_guard,
-                    &iam_guard,
-                    &lattice_guard,
-                )?;
-                r_out.unwrap_or_else(|| vec![])
-            }
-            3.. => {
-                // Appending
-                vec![]
-            }
-        };
-        output.extend(outbound);*/
     }
 
     Ok(output)

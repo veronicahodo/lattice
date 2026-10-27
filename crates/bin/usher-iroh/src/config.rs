@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{Context, Result, anyhow};
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
@@ -9,6 +10,7 @@ pub struct UsherIrohConfig {
     pub root: String,
     pub enclave: String,
     pub i_am: String,
+    pub usher_key: [u8; 32],
     pub scopes: String,
     pub usher_map: String,
     pub trans_registry: String,
@@ -32,6 +34,7 @@ pub struct UsherConfigJson {
     root: Option<String>,
     enclave: Option<String>,
     i_am: Option<String>,
+    usher_key: Option<String>,
     scopes: Option<String>,
     usher_map: Option<String>,
     trans_registry: Option<String>,
@@ -60,6 +63,7 @@ impl UsherIrohConfig {
     /// Makes a new config struct with the defaults
     ///
     pub fn new() -> UsherIrohConfig {
+        let private_key: [u8; 32] = rand::random();
         UsherIrohConfig {
             config: UsherIrohConfig::DEFAULT_CONFIG.to_string(),
             bind: UsherIrohConfig::DEFAULT_BIND.to_string(),
@@ -67,6 +71,7 @@ impl UsherIrohConfig {
             root: UsherIrohConfig::DEFAULT_ROOT.to_string(),
             enclave: UsherIrohConfig::DEFUALT_ENCLAVE.to_string(),
             i_am: UsherIrohConfig::DEFAULT_IAM.to_string(),
+            usher_key: private_key,
             scopes: UsherIrohConfig::DEFAULT_SCOPES.to_string(),
             usher_map: UsherIrohConfig::DEFAULT_USHER_MAP.to_string(),
             trans_registry: UsherIrohConfig::DEFAULT_TRANS_REGISTRY.to_string(),
@@ -84,6 +89,20 @@ impl UsherIrohConfig {
     ///
     pub fn from_disk(path: String) -> Result<UsherIrohConfig> {
         let data: UsherConfigJson = serde_json::from_slice(&std::fs::read(&path)?)?;
+        let usher_key: [u8; 32] = if let Some(usher) = data.usher_key {
+            let decode = URL_SAFE_NO_PAD
+                .decode(usher)
+                .context("Failed to decode base64 string")?;
+            let array: [u8; 32] = decode.try_into().map_err(|vec: Vec<u8>| {
+                anyhow!(
+                    "Decoded byte length mismatch: expected 32 bytes, got {} bytes",
+                    vec.len()
+                )
+            })?;
+            array
+        } else {
+            rand::random()
+        };
         Ok(UsherIrohConfig {
             config: path,
             bind: data
@@ -99,6 +118,7 @@ impl UsherIrohConfig {
             i_am: data
                 .i_am
                 .unwrap_or_else(|| UsherIrohConfig::DEFAULT_IAM.to_string()),
+            usher_key,
             scopes: data
                 .scopes
                 .unwrap_or_else(|| UsherIrohConfig::DEFAULT_SCOPES.to_string()),
