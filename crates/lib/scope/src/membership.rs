@@ -1,9 +1,10 @@
 use anyhow::Result;
 use iroh::PublicKey;
+use serde::{Deserialize, Serialize};
 
 use crate::Scope;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Membership {
     pub issued: u64,
     pub eff: u64,

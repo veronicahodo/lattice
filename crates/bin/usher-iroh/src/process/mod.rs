@@ -10,6 +10,10 @@ use crate::{
     usher::{self},
 };
 
+pub mod action;
+pub mod verify;
+pub mod walk;
+
 pub async fn process_rhex(
     chatter: Vec<ChatterRequest>,
     config: &UsherIrohConfig,
@@ -71,7 +75,7 @@ pub async fn process_rhex(
             // **** Submit                                      ****
             // *****************************************************
             ChatterRequestType::Submit(r) => {
-                append::submit_rhex(config, &r, &lattice_guard, &trans_reg_guard).await?
+                append::submit_rhex(config, &r, &mut lattice_guard, &trans_reg_guard).await?
             }
         };
 

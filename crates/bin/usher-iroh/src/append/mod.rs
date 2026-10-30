@@ -1,20 +1,16 @@
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Result, bail};
 use comms::chatter::{ChatterResponse, ChatterResponseType};
-use lattice::{
-    Lattice, Rhex,
-    rhex::{check::CheckStatus, data::RhexData},
-};
-use serde_json::Value;
+use lattice::{Lattice, Rhex, rhex::check::CheckStatus};
 use transform::{descriptor::DescriptorAction, registry::TransformRegistry};
 
-use crate::{append::store::append_store, config::UsherIrohConfig, request, trans};
+use crate::{append::store::append_disk, config::UsherIrohConfig, request, trans};
 
 pub mod store;
 
 pub async fn submit_rhex(
     config: &UsherIrohConfig,
     rhex: &Rhex,
-    lattice: &Lattice,
+    lattice: &mut Lattice,
     trans_reg: &TransformRegistry,
 ) -> Result<ChatterResponse> {
     let scope = lattice.scopes.get(&rhex.intent.scope);
@@ -73,12 +69,10 @@ pub async fn submit_rhex(
             }
         };
     }*/
-    let iroh_rhex = rhex.to_iroh()?;
-    let append_status = append_store(&iroh_rhex).await?;
-    println!("{:?}", append_status);
+    append_disk(rhex, &config.scopes).await?;
     Ok(ChatterResponse {
         version: 0,
-        response: ChatterResponseType::Accepted(append_status.clone()),
+        response: ChatterResponseType::Accepted(rhex.curr.unwrap()),
         payload: vec![],
     })
 }
