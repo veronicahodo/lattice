@@ -106,27 +106,30 @@ impl Scope {
         let mut pos: u8 = 0;
 
         let author_sigs = rhex.get_sigs(&RhexSignatureType::Author).unwrap();
-        if author_sigs.len() < rhex.sigs.len() {
+        /*if (author_sigs.len() < rhex.sigs.len()) || author_sigs.len() == 0 {
             return Ok(vec![CheckStatus::WrongStage {
                 attempted: RhexSignatureType::Usher,
             }]);
-        }
+        }*/
 
-        for sig in &rhex.sigs {
+        for sig in &author_sigs {
             if sig.t != RhexSignatureType::Author {
                 output.push(CheckStatus::SignatureInvalid(pos));
+                println!("Invalid sig type: {:?}", sig.t);
             } else {
                 let valid = sig
                     .validate(&rhex.get_hash(RhexSignatureType::Author))
                     .unwrap();
                 if !valid {
                     output.push(CheckStatus::SignatureInvalid(pos));
+                    println!("Sig failed validation: {:?}", sig);
                 } else {
+                    println!("Time before check_per: {}", time);
+
                     output.push(
                         self.check_rt_access_per(
                             &rhex.intent.rt,
-                            &PublicKey::from_bytes(&sig.pk.key_bytes.clone().try_into().unwrap())
-                                .unwrap(),
+                            &PublicKey::from_bytes(&sig.pk.key_bytes_to_publickey()).unwrap(),
                             &Some(time.clone()),
                         )
                         .unwrap(),
@@ -145,12 +148,14 @@ impl Scope {
     ///
     pub fn check_quorum_and_observers(&self, rhex: &Rhex, time: &u64) -> Result<CheckStatus> {
         let all_ushers = self.usher_index_at(time.clone())?;
+        let actor_ushers = all_ushers.get(&UsherRole::Actor).unwrap();
         let quorum_ushers = all_ushers.get(&UsherRole::Quorum);
-        let quorum_ushers = if quorum_ushers.is_some() {
-            quorum_ushers.unwrap()
+        let mut quorum_ushers = if quorum_ushers.is_some() {
+            quorum_ushers.unwrap().clone()
         } else {
-            &vec![]
+            vec![]
         };
+        quorum_ushers.extend(actor_ushers);
         let policy = self.get_policy_at(time);
         let groups = self.member_of_at(&rhex.intent.author, &time)?;
 
@@ -217,7 +222,13 @@ impl Scope {
     ///
     pub fn check_usher(&self, rhex: &Rhex) -> Result<CheckStatus> {
         // see if usher specified is available.
-        let current_usher = self.ushers_at(rhex.context.clone().unwrap().at)?;
+
+        // Set time
+        let time = match rhex.context.clone() {
+            Some(context) => context.at,
+            None => time::get_current_time(),
+        };
+        let current_usher = self.ushers_at(time)?;
         // We can only get away with a blind unwrap here because a scope
         // without actors is an invalid scope and cannot be created
         let usher = current_usher
@@ -251,7 +262,7 @@ impl Scope {
     /// each Rhex field for validity. (Minus nonce reuse, because that
     /// actually calls for pulling the whole chain in, which is not
     /// something we want on quick checks)
-    pub fn full_check(&self, rhex: &mut Rhex) -> Result<Vec<CheckStatus>> {
+    pub fn full_check(&self, rhex: &Rhex) -> Result<Vec<CheckStatus>> {
         let mut outputs = Vec::new();
         // outputs.push(rhex.check_data_size()?);
         outputs.push(rhex.check_schema()?);
@@ -282,7 +293,7 @@ impl Scope {
     /// This is similar to `self.full_check` except this also checks
     /// `rhex.curr` to see if it's correct and the overall record size
     ///
-    pub fn final_check(&self, rhex: &mut Rhex, time: &u64) -> Result<Vec<CheckStatus>> {
+    pub fn final_check(&self, rhex: &Rhex, time: &u64) -> Result<Vec<CheckStatus>> {
         let mut outputs = Vec::new();
         let full = self.full_check(rhex)?;
         outputs.extend(full);

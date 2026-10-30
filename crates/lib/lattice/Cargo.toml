@@ -10,3 +10,4 @@ transform = { path = "../../lib/transform" }
 anyhow = { workspace = true }
 util = { path = "../util/" }
 cbor2 = { workspace = true }
+iroh = { workspace = true }

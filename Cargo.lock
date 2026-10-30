@@ -501,6 +501,7 @@ dependencies = [
  "anyhow",
  "cbor2",
  "iroh",
+ "key",
  "lattice",
  "minicbor",
  "serde",
@@ -2022,6 +2023,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cbor2",
+ "iroh",
  "scope",
  "transform",
  "usher",
@@ -3201,13 +3203,13 @@ dependencies = [
  "ed25519-dalek 2.2.0",
  "iroh",
  "iroh-blobs",
- "iroh-services",
  "minicbor",
  "rand",
  "serde",
  "serde-big-array",
  "serde_bytes",
  "serde_json",
+ "time 0.1.0",
 ]
 
 [[package]]
@@ -3914,6 +3916,9 @@ dependencies = [
 [[package]]
 name = "time"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+]
 
 [[package]]
 name = "time"
@@ -4281,10 +4286,11 @@ dependencies = [
  "base64 0.22.1",
  "cbor2",
  "clap",
+ "comms",
+ "hex",
  "iam",
  "iroh",
  "iroh-blobs",
- "iroh-services",
  "key",
  "lattice",
  "minicbor",

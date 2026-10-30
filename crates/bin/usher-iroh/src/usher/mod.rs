@@ -1,4 +1,6 @@
+use crate::trans;
 use anyhow::Result;
+use comms::chatter::{ChatterResponse, ChatterResponseType};
 use iam::IAm;
 use key::enclave::Enclave;
 use lattice::{
@@ -10,13 +12,8 @@ use lattice::{
         signature::{RhexSignature, RhexSignatureType},
     },
 };
-use transform::{descriptor::DescriptorAction, registry::TransformRegistry};
-
-use crate::{
-    comms::chatter::{ChatterResponse, ChatterResponseType},
-    trans,
-};
 use time;
+use transform::{descriptor::DescriptorAction, registry::TransformRegistry};
 
 pub mod check;
 pub mod sign;
@@ -37,13 +34,22 @@ pub fn sign_as_usher(
     // Do the checks!
     let check_output = run_checks(iam, &mut rhex, lattice);
 
-    if let Ok(_) = check_output {
-        let (trans_status, trans_intents) =
-            trans::fire_transforms(&rhex, trans_registry, DescriptorAction::Validate)?;
-        if trans_status != CheckStatus::Success {
-            output.push(trans_status);
-        } else {
-            intents.extend(trans_intents.iter().cloned());
+    match check_output {
+        Ok(_) => {
+            let (trans_status, trans_intents) =
+                trans::fire_transforms(&rhex, trans_registry, DescriptorAction::Validate)?;
+            if trans_status != CheckStatus::Success {
+                output.push(trans_status);
+            } else {
+                intents.extend(trans_intents.iter().cloned());
+            }
+        }
+        Err(e) => {
+            return Ok(ChatterResponse {
+                version: 0,
+                response: ChatterResponseType::Rejected(e),
+                payload: vec![],
+            });
         }
     }
 
@@ -85,6 +91,8 @@ fn run_checks(
     check::control_scope(scope).check_and_push_into(&mut output)?;
     let scope = scope.unwrap();
     let time = time::get_current_time();
+    let chk_auth = scope.check_authors(rhex, &time);
+    println!("{:?}", chk_auth);
     scope
         .check_authors(rhex, &time)
         .unwrap_or_else(|_| vec![CheckStatus::SignatureInvalid(0)])

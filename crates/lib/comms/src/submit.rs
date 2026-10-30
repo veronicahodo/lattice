@@ -1,5 +1,6 @@
 use anyhow::Result;
 use iroh::{Endpoint, endpoint::presets};
+use key::Key;
 
 use crate::{
     COMM_PROTOCOL,
@@ -39,7 +40,11 @@ async fn submit_requests(
         let response: Vec<ChatterResponse> = cbor2::from_slice(&response_bytes)?;
         responses.extend(response.clone());
 
-        println!("Response from {}: {:?}", req.address, response);
+        println!(
+            "Response from 💠{}: {:?}",
+            Key::sigil_id(req.address.as_bytes()),
+            response
+        );
     }
     Ok(responses)
 }

@@ -1,12 +1,11 @@
 use anyhow::Result;
-use lattice::rhex::signature::{AgileKey, RhexSigAlgo, RhexSignature, RhexSignatureType};
-use time::MicroMarks;
+use comms::chatter::{ChatterRequest, ChatterRequestType, ChatterResponse, ChatterResponseType};
 
 use crate::{
+    append,
     author::sign_as_author,
-    comms::chatter::{ChatterRequest, ChatterRequestType, ChatterResponse, ChatterResponseType},
     config::UsherIrohConfig,
-    quorum,
+    observe, quorum,
     server::appstate::AppState,
     usher::{self},
 };
@@ -26,11 +25,6 @@ pub async fn process_rhex(
     let mut usher_map_guard = appstate.usher_map.write().await;
 
     for c in chatter {
-        let time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() as i64;
-
         let reponse = match c.request {
             // *****************************************************
             // **** Author Sign                                 ****
@@ -58,35 +52,26 @@ pub async fn process_rhex(
                 intent,
                 context,
                 sigs,
-            } => quorum::sign_as_quorum(&intent, &context, &sigs, &lattice_guard)?,
+            } => quorum::sign_as_quorum(
+                &c.address,
+                &enclave_guard,
+                &intent,
+                &context,
+                &sigs,
+                &lattice_guard,
+            )?,
             // *****************************************************
             // **** Observer Sign                               ****
             // *****************************************************
             ChatterRequestType::ObserverSign(bin) => {
-                let response = ChatterResponse {
-                    version: 0,
-                    response: ChatterResponseType::ObserverSignResponse(RhexSignature {
-                        pk: AgileKey {
-                            algo: RhexSigAlgo::Ed25519,
-                            key_bytes: vec![],
-                        },
-                        sig: vec![],
-                        t: RhexSignatureType::Observer(time.as_micromarks()),
-                    }),
-                    payload: vec![],
-                };
-                response
+                let key = c.address.clone();
+                observe::sign_as_observer(&enclave_guard, &key, &bin)?
             }
             // *****************************************************
             // **** Submit                                      ****
             // *****************************************************
             ChatterRequestType::Submit(r) => {
-                let response = ChatterResponse {
-                    version: 0,
-                    response: ChatterResponseType::Accepted([0u8; 32]),
-                    payload: vec![],
-                };
-                response
+                append::submit_rhex(config, &r, &lattice_guard, &trans_reg_guard).await?
             }
         };
 

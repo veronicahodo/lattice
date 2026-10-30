@@ -1,18 +1,21 @@
 use anyhow::Result;
+use comms::chatter::{ChatterResponse, ChatterResponseType};
 use key::enclave::Enclave;
-use lattice::rhex::{
-    intent::RhexIntent,
-    signature::{AgileKey, RhexSigAlgo, RhexSignature, RhexSignatureType},
+use lattice::{
+    Rhex,
+    rhex::{
+        intent::RhexIntent,
+        signature::{AgileKey, RhexSigAlgo, RhexSignature, RhexSignatureType},
+    },
 };
-
-use crate::comms::chatter::{ChatterResponse, ChatterResponseType};
 
 pub fn sign_as_author(
     intent: &RhexIntent,
     _token: &[u8],
     enclave: &Enclave,
 ) -> Result<ChatterResponse> {
-    let intent_hash = intent.get_hash();
+    let rhex = Rhex::build_with(intent, &None, &vec![], &None);
+    let intent_hash = rhex.get_hash(RhexSignatureType::Author);
     // FIXME: This literally does nothing with the token which is supposed
     // to be our authentication method.
     // CRITICAL!
@@ -31,7 +34,7 @@ pub fn sign_as_author(
     Ok(ChatterResponse {
         version: 0,
         response: ChatterResponseType::AuthorSignResponse {
-            intent_hash,
+            intent_hash: rhex.intent.get_hash(),
             sig: out_sig,
         },
         payload: vec![],

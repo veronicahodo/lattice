@@ -41,11 +41,11 @@ impl IAm {
     /// This should be called with the key returned with
     /// enclave.generate()
     ///
-    pub fn add(&mut self, pk: PublicKey, name: Option<String>, location: IAmLocation) {
+    pub fn add(&mut self, pk: &PublicKey, name: Option<String>, location: IAmLocation) {
         self.entries.insert(
-            pk,
+            pk.clone(),
             IAmMember {
-                pk,
+                pk: pk.clone(),
                 name,
                 location,
                 last_updated: 0,

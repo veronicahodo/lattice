@@ -1,4 +1,5 @@
 use anyhow::Result;
+use iroh_blobs::Hash;
 use serde::{Deserialize, Serialize};
 /*
     Structure: Rhex
@@ -22,6 +23,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     context::RhexContext,
     intent::RhexIntent,
+    iroh::IrohRhex,
     signature::{RhexSignature, RhexSignatureType},
 };
 
@@ -131,13 +133,32 @@ impl Rhex {
     /// H(label | intent | context | sigs)
     pub fn calc_curr(&self) -> [u8; 32] {
         let sigs = Self::to_sorted(&self.sigs);
+
+        let iroh = IrohRhex {
+            intent: self.intent.clone(),
+            context: self.context.clone().unwrap(),
+            sigs,
+        };
         let mut hasher = blake3::Hasher::new();
-        hasher.update(b"RHEX_CURR_HASH_0");
-        hasher.update(&self.intent.get_hash());
-        hasher.update(&self.context.clone().unwrap().get_hash());
-        let sigs_bin = cbor2::to_canonical_vec(&sigs);
-        hasher.update(&sigs_bin.unwrap());
+        hasher.update(&iroh.to_vec().unwrap());
         hasher.finalize().into()
+    }
+
+    pub fn calc_iroh_final(&self) -> Result<Hash> {
+        let mut hasher = blake3::Hasher::new();
+        let rhex_iroh = self.to_iroh()?;
+        hasher.update(&rhex_iroh.to_vec()?);
+        let final_hash = hasher.finalize().into();
+        Ok(Hash::from_bytes(final_hash))
+    }
+
+    pub fn to_iroh(&self) -> Result<IrohRhex> {
+        let sigs = Self::to_sorted(&self.sigs);
+        Ok(IrohRhex {
+            intent: self.intent.clone(),
+            context: self.context.clone().unwrap(),
+            sigs,
+        })
     }
 
     pub fn single_disk_get(path: &str) -> Self {

@@ -71,7 +71,7 @@ impl Policy {
                 k: 1,
                 o: 1,
                 quorum: vec!["world_line_zero".to_string()],
-                delay: 1_000_000_000,
+                delay: 1_000_000_000_000,
                 rt: vec!["lattice:genesis".to_string()],
                 window: 1_000,
             }],

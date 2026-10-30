@@ -7,7 +7,7 @@ use crate::{
 };
 
 use anyhow::Result;
-use iroh::{EndpointId, PublicKey};
+use iroh::PublicKey;
 pub use rhex;
 use rhex::Rhex;
 
@@ -34,7 +34,7 @@ pub struct Scope {
     // groups of members
     pub memberships: HashMap<(PublicKey, String), Vec<Membership>>,
     // ushers in the scope and their priority
-    pub ushers: HashMap<UsherRole, HashMap<EndpointId, Vec<UsherStatus>>>,
+    pub ushers: HashMap<UsherRole, HashMap<PublicKey, Vec<UsherStatus>>>,
     // The current hash of the last record in the chain.
     pub head: Option<[u8; 32]>,
     // Last updated
@@ -53,7 +53,7 @@ impl Scope {
         let mut ushers = HashMap::new();
         let mut endpoint = HashMap::new();
         endpoint.insert(
-            EndpointId::from_bytes(&creator)?,
+            PublicKey::from_bytes(&creator)?,
             vec![UsherStatus {
                 issued: 0,
                 eff: 0,
@@ -87,7 +87,7 @@ impl Scope {
     /// This takes a Rhex chain named "{scopes}/{scope_name}.rchain"
     /// and loads in into a Vec.
     ///
-    pub fn slurp_scope(&mut self, path: String) -> Result<Vec<Rhex>> {
+    pub fn slurp_scope(&self, path: &String) -> Result<Vec<Rhex>> {
         Ok(Rhex::chain_from_disk(&PathBuf::from(format!(
             "{}{}.rchain",
             path, self.name

@@ -5,8 +5,8 @@ static GLOBAL_ZERO_MS: OnceLock<i64> = OnceLock::new();
 
 /// Denomiator derive from the length of a sidereal day.
 /// (86164090.5308 ms * 10^11 . 10^9 ticks)
-const SIDEREAL_SCALE_NUMERATOR: u128 = 100_000_000_000;
-const SIDEREAL_SCALE_DENOMINATOR: u128 = 8_616_409;
+const SIDEREAL_SCALE_NUMERATOR: u128 = 1_000_000_000;
+const SIDEREAL_SCALE_DENOMINATOR: u128 = 86_164_090;
 
 pub fn set_global_genesis(ms: i64) -> Result<(), i64> {
     GLOBAL_ZERO_MS.set(ms)
@@ -48,4 +48,41 @@ pub fn get_current_time() -> u64 {
         .as_millis() as i64;
     let time = time.as_micromarks();
     time
+}
+
+pub fn print_gt(time: &u64) -> String {
+    // Periods:
+    //  Micromarks: 1/1,000,000,000th of a Turn
+    //  Submarks: 1/1,000,000th of a Turn
+    //  Marks: 1/1,000th of a Turn
+    //  Turn: 1 sidereal day
+    //  Luna: 28 Turns
+    //  Sol: 13 Luna + 1 Turn
+    // GT Format: GT[Sol.Luna.Turn@Mark.Submark.Micromarks]
+    // Constants for time conversion
+    const MICROMARKS_PER_MARK: u64 = 1_000_000;
+    const MICROMARKS_PER_SUBMARK: u64 = 1_000;
+    const MICROMARKS_PER_TURN: u64 = 1_000_000_000;
+    const TURNS_PER_LUNA: u64 = 28;
+    const TURNS_PER_SOL: u64 = (13 * 28) + 1; // 365 Turns
+
+    // Extract Turn and sub-turn fractions
+    let total_turns = time / MICROMARKS_PER_TURN;
+    let turn_remainder = time % MICROMARKS_PER_TURN;
+
+    let mark = turn_remainder / MICROMARKS_PER_MARK;
+    let submark = (turn_remainder % MICROMARKS_PER_MARK) / MICROMARKS_PER_SUBMARK;
+    let micromarks = turn_remainder % MICROMARKS_PER_SUBMARK;
+
+    // Extract Sol, Luna, and Turn
+    let sol = total_turns / TURNS_PER_SOL;
+    let sol_remainder = total_turns % TURNS_PER_SOL;
+    let luna = sol_remainder / TURNS_PER_LUNA;
+    let turn = sol_remainder % TURNS_PER_LUNA;
+
+    // Format according to GT[Sol.Luna.Turn@Mark.Submark.Micromarks]
+    format!(
+        "GT[{}.{}.{}@{}.{}.{}]",
+        sol, luna, turn, mark, submark, micromarks
+    )
 }

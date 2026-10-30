@@ -24,16 +24,16 @@ impl Scope {
     pub fn ushers_at(
         &self,
         time: u64,
-    ) -> Result<HashMap<UsherRole, HashMap<EndpointId, UsherStatus>>> {
+    ) -> Result<HashMap<UsherRole, HashMap<PublicKey, UsherStatus>>> {
         let mut output = HashMap::new();
         for (role, members_hm) in &self.ushers {
             let mut endpoint_latest = HashMap::new();
             for member in members_hm {
                 let mut statuses = member.1.clone();
-                statuses.retain(|s| s.issued < time);
+                statuses.retain(|s| s.issued <= time);
                 if statuses.last().is_some() {
                     let last = statuses.last().unwrap();
-                    if last.eff < time && last.exp > time {
+                    if last.eff <= time && last.exp > time {
                         endpoint_latest.insert(PublicKey::from(member.0.clone()), last.clone());
                     }
                 }
@@ -49,7 +49,7 @@ impl Scope {
     /// return the UsherAssignment with the list of public keys
     ///
     pub fn usher_index_at(&self, time: u64) -> Result<HashMap<UsherRole, Vec<EndpointId>>> {
-        let mut output = HashMap::new();
+        let mut output: HashMap<UsherRole, Vec<PublicKey>> = HashMap::new();
         let ushers = self.ushers_at(time)?;
         for role in ushers {
             let mut endpoints = Vec::new();

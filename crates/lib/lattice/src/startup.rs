@@ -1,5 +1,14 @@
+use std::collections::HashMap;
+
 use anyhow::{Result, bail};
-use scope::{Scope, rhex::Rhex};
+use iroh::PublicKey;
+use scope::{
+    Scope,
+    membership::Membership,
+    policy::Policy,
+    rhex::Rhex,
+    ushers::{UsherRole, UsherStatus},
+};
 use transform::registry::TransformRegistry;
 use util::verbose_println;
 
@@ -46,6 +55,38 @@ impl Lattice {
             )?;
             self.scopes.insert(scope.name.clone(), scope);
             verbose_println("done!".to_string(), verbose);
+        }
+
+        // Failsafe if there's no scopes at all
+        let len = self.scopes.len();
+        if len == 0 {
+            let genesis_key = PublicKey::from_bytes(&Lattice::GENESIS_KEY)?;
+            let mut new_root = Scope::new(&"".to_string(), genesis_key.clone())?;
+            /*new_root
+            .policy_map
+            .push((0, Policy::default_lattice_policy()));*/
+            new_root.add_membership(
+                "world_line_zero".to_string(),
+                vec![genesis_key],
+                Membership {
+                    issued: 0,
+                    eff: 0,
+                    exp: 1_000_000_000_000_000,
+                    by: genesis_key.clone(),
+                },
+            )?;
+            let usher_status = UsherStatus {
+                issued: 0,
+                eff: 0,
+                exp: 1_000_000_000_000_000,
+                by: genesis_key.clone(),
+            };
+            let mut map = HashMap::new();
+            map.insert(genesis_key.clone(), vec![usher_status]);
+            new_root.ushers.insert(UsherRole::Actor, map.clone());
+            new_root.head = None;
+            new_root.updated = 0;
+            self.add_scope(&new_root);
         }
         Ok(())
     }

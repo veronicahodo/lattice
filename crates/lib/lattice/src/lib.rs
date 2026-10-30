@@ -19,8 +19,8 @@ impl Lattice {
     /// This is the only assumption, other than the bootstrapped
     /// addresses of the root scope ushers.
     pub const GENESIS_KEY: [u8; 32] = [
-        159, 1, 126, 60, 238, 78, 235, 65, 8, 72, 1, 195, 236, 183, 156, 73, 84, 207, 169, 168, 47,
-        25, 25, 98, 254, 71, 65, 201, 65, 216, 23, 211,
+        87, 135, 128, 79, 106, 64, 254, 179, 160, 51, 227, 90, 193, 88, 114, 178, 76, 135, 38, 102,
+        215, 90, 22, 212, 232, 186, 192, 17, 42, 29, 161, 109,
     ];
 
     pub fn new() -> Self {

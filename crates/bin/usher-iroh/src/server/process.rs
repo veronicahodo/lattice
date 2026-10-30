@@ -1,9 +1,8 @@
 use anyhow::Result;
+use comms::chatter::ChatterRequest;
 use iroh::endpoint::{RecvStream, SendStream};
 
-use crate::{
-    comms::chatter::ChatterRequest, config::UsherIrohConfig, process, server::appstate::AppState,
-};
+use crate::{config::UsherIrohConfig, process, server::appstate::AppState};
 
 pub async fn process_stream(
     send: &mut SendStream,

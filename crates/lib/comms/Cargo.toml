@@ -10,3 +10,4 @@ cbor2 = { workspace = true }
 lattice = { path = "../lattice" }
 iroh = { workspace = true }
 serde = { workspace = true }
+key = { path = "../key" }

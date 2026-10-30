@@ -13,6 +13,7 @@ impl Rhex {
     ///
     pub fn check_curr_hash(&self) -> Result<CheckStatus> {
         let calc_curr = self.calc_curr();
+        println!("self: {:?}\ncalced: {:?}", self.calc_curr(), calc_curr);
         if self.curr.is_none() || (calc_curr != self.curr.unwrap()) {
             return Ok(CheckStatus::CurrentHashMismatch {
                 presented: self.curr.unwrap(),
@@ -119,10 +120,9 @@ pub enum CheckStatus {
         o: usize,
     },
     SignatureNotInWindow(u8),
-    WrongStage {
+    /*WrongStage {
         attempted: RhexSignatureType,
-    },
-
+    },*/
     // **** FINAL RELATED ****
     CurrentHashMismatch {
         presented: [u8; 32],

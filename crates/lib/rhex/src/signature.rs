@@ -1,6 +1,7 @@
 use anyhow::Result;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use ed25519_dalek::Verifier;
+use iroh::PublicKey;
 use serde::{Deserialize, Serialize};
 
 use crate::Rhex;
@@ -14,6 +15,14 @@ pub enum RhexSigAlgo {
 pub struct AgileKey {
     pub algo: RhexSigAlgo,
     pub key_bytes: Vec<u8>,
+}
+
+impl AgileKey {
+    pub fn key_bytes_to_publickey(&self) -> PublicKey {
+        let array: [u8; 32] = self.key_bytes.clone().try_into().expect("Not 32");
+
+        PublicKey::from_bytes(&array).unwrap()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Hash, PartialOrd, Ord, Eq)]
@@ -44,17 +53,14 @@ impl RhexSignature {
     pub fn validate(&self, hash: &[u8; 32]) -> Result<bool> {
         match self.pk.algo {
             RhexSigAlgo::Ed25519 => {
-                let key = ed25519_dalek::VerifyingKey::from_bytes(
-                    &self.pk.key_bytes.clone().try_into().unwrap(),
-                )?;
-                if let Ok(_) = key.verify(
+                let key =
+                    ed25519_dalek::VerifyingKey::from_bytes(&self.pk.key_bytes_to_publickey())?;
+
+                let state = key.verify(
                     hash,
                     &ed25519_dalek::Signature::from_bytes(&self.sig.clone().try_into().unwrap()),
-                ) {
-                    Ok(true)
-                } else {
-                    Ok(false)
-                }
+                );
+                if state.is_ok() { Ok(true) } else { Ok(false) }
             }
         }
     }

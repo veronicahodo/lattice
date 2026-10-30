@@ -176,7 +176,7 @@ impl Key {
     /// This generates the SigilID from the key.
     /// Used in scope determination and easy identification
     ///
-    pub fn sigid_id(&self) -> String {
+    pub fn to_sigid_id(&self) -> String {
         let mut hasher = blake3::Hasher::new();
         hasher.update(&self.pk.unwrap().to_vec());
         let hash = hasher.finalize();
@@ -189,6 +189,20 @@ impl Key {
             &crockford[12..16]
         );
         output
+    }
+
+    pub fn sigil_id(key: &[u8; 32]) -> String {
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(key);
+        let hash: [u8; 32] = hasher.finalize().into();
+        let crockford = base32::encode(base32::Alphabet::Crockford, &hash);
+        format!(
+            "{}-{}-{}-{}",
+            &crockford[0..4],
+            &crockford[4..8],
+            &crockford[8..12],
+            &crockford[12..16]
+        )
     }
 
     /// # `pretty_format(show_sk)`
@@ -211,7 +225,7 @@ impl Key {
                 "{}Public Key: BASE64({})\nSigilID: 💠{}\n",
                 output,
                 pk,
-                self.sigid_id()
+                self.to_sigid_id()
             );
         };
         output

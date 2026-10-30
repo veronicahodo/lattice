@@ -1,20 +1,24 @@
+use anyhow::Result;
+use iroh_blobs::Hash;
 use serde::{Deserialize, Serialize};
 
 use crate::{context::RhexContext, intent::RhexIntent, signature::RhexSignature};
 
-/// # RhexEnvelope
-///
-/// Designed to be the object stored in Iroh Blobs. This is what we
-/// use to get our address.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RhexEnvelope {
-    intent: RhexIntent,
-    context: RhexContext,
-    sigs: Vec<RhexSignature>,
+pub struct IrohRhex {
+    pub intent: RhexIntent,
+    pub context: RhexContext,
+    pub sigs: Vec<RhexSignature>,
 }
 
-impl RhexEnvelope {
-    pub fn to_vec(&self) -> Vec<u8> {
-        cbor2::to_canonical_vec(&self).unwrap()
+impl IrohRhex {
+    pub fn to_vec(&self) -> Result<Vec<u8>> {
+        Ok(cbor2::to_canonical_vec(&self)?)
+    }
+
+    pub fn to_hash(&self) -> Result<Hash> {
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(&self.to_vec()?);
+        Ok(Hash::from_bytes(hasher.finalize().into()))
     }
 }

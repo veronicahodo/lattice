@@ -16,5 +16,5 @@ base64 = { workspace = true }
 minicbor = { workspace = true }
 iroh = { workspace = true }
 iroh-blobs = { workspace = true }
-iroh-services = { path = "../iroh-services" }
 cbor2 = { workspace = true }
+time = { path = "../time" }

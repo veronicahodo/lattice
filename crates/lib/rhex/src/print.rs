@@ -7,6 +7,7 @@ impl Rhex {
         let magic = match self.magic.as_slice() {
             b"RHEX\x00\x01" => "V1",
             b"RHEX\x00\x02" => "V2",
+            b"RHEX\x00\x03" => "V3",
             _ => "Unknown",
         };
         let prev_hash = match self.intent.prev {
@@ -37,26 +38,33 @@ impl Rhex {
             Some(hash) => URL_SAFE_NO_PAD.encode(hash),
             None => "None".to_string(),
         };
-        let data: RhexData = cbor2::from_slice(&self.data).unwrap();
-        let context = if self.context.is_none() {
-            "None".to_string()
+        let data: RhexData = if self.data.len() > 0 {
+            cbor2::from_slice(&self.data).unwrap()
         } else {
-            let spacial = match &self.clone().context.unwrap().s {
-                Some(s) => format!(
-                    "\"{}\": {}",
-                    s.s_ref,
-                    URL_SAFE_NO_PAD.encode(s.s_data.clone())
-                ),
-                None => "None".to_string(),
-            };
-            format!(
-                "{{
-            \t\tat: {}
-            \t\ts: {}
-            \t}}",
-                &self.context.clone().unwrap().at,
-                spacial
-            )
+            RhexData::None
+        };
+        let context_str = match &self.context {
+            Some(context) => {
+                let time = time::print_gt(&context.at);
+                let spacial = match &context.s {
+                    Some(spacial) => {
+                        format!(
+                            "\ts_ref: {}
+                        \ts_data: {:?}",
+                            spacial.s_ref, spacial.s_data
+                        )
+                    }
+                    None => "None".to_string(),
+                };
+                format!(
+                    "{{
+                        at: {}
+                        s: {}
+                    }}",
+                    time, spacial
+                )
+            }
+            None => "None".to_string(),
         };
 
         let output = format!(
@@ -85,7 +93,7 @@ impl Rhex {
             schema,
             data_hash,
             data.print(),
-            context,
+            context_str,
             sigs,
             curr
         );

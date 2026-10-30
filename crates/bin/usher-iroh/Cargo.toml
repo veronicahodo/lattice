@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-iroh-services = { path = "../../lib/iroh-services" }
 lattice = { path = "../../lib/lattice" }
 key = { path = "../../lib/key" }
 iam = { path = "../../lib/iam" }
@@ -25,3 +24,5 @@ cbor2 = { workspace = true }
 base64 = { workspace = true }
 rand = { workspace = true }
 zeroize = { workspace = true }
+comms = { path = "../../lib/comms" }
+hex = { workspace = true }

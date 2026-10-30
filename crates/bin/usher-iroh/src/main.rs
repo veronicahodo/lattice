@@ -2,22 +2,22 @@ use std::{path::PathBuf, process::exit, sync::Arc};
 
 use crate::{
     cli::{Cli, Commands},
-    comms::chatter::ChatterRequest,
     config::UsherIrohConfig,
 };
 use clap::Parser;
+use comms::chatter::ChatterRequest;
 use util::{verbose_print, verbose_println};
 
 pub mod append;
 pub mod author;
 pub mod bps;
-pub mod check;
 pub mod cli;
-pub mod comms;
 pub mod config;
 pub mod gossip;
+pub mod observe;
 pub mod process;
 pub mod quorum;
+pub mod request;
 pub mod retrieve;
 pub mod server;
 pub mod trans;
@@ -30,6 +30,18 @@ async fn main() {
     println!("*****************************************************");
     println!("Starting what is probably a terrible excuse for a server...");
     println!("Bro, welcome to the dungeon lol... ⚔️🐉");
+    print!("🕑 Setting clock...");
+    // This is the ORIGINAL GT. I re-enable sometimes just to see
+    // how long it's been lol
+    //let _ = time::set_global_genesis(1757776623099);
+
+    // This is the current genesis on what is essentially V3 of the
+    // lattice
+    let _ = time::set_global_genesis(1793124803572);
+    println!(
+        "Current time: {}",
+        time::print_gt(&time::get_current_time())
+    );
     let cli = Cli::parse();
     match cli.command {
         Commands::Listen {

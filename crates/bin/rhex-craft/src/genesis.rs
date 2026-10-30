@@ -15,7 +15,7 @@ use serde_json::json;
 pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Result<()> {
     let enclave_path = match enclave_path {
         Some(ep) => ep,
-        None => "./keys".to_string(),
+        None => "./keys/".to_string(),
     };
     let mut rhex = rhex::Rhex::new();
     //let key = key::Key::disk_get(&key);
@@ -38,14 +38,15 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     let mut hasher = blake3::Hasher::new();
     hasher.update(&buf);
     let hash = hasher.finalize();
+
     // Build intent
     rhex.intent.prev = None;
     rhex.intent.scope = "".to_string();
-    rhex.intent.author = PublicKey::from_bytes(&key_conv)?;
-    rhex.intent.usher = PublicKey::from_bytes(&key_conv)?;
+    rhex.intent.author = key_conv.clone();
+    rhex.intent.usher = key_conv.clone();
     rhex.intent.rt = "lattice:genesis".to_string();
     rhex.intent.schema = None;
-    rhex.intent.data_hash = Some(*hash.as_bytes());
+    rhex.intent.data_hash = Some(hash.as_bytes().clone());
 
     // Add context since we are the usher too
     rhex.context = Some(RhexContext { at: 0, s: None });
@@ -53,30 +54,27 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     // Sign it like the dirty hoe we are.
     let key = AgileKey {
         algo: Ed25519,
-        key_bytes: key_conv.as_bytes().try_into().unwrap(),
+        key_bytes: key_conv.as_bytes().to_vec(),
     };
     rhex.sigs.push(RhexSignature {
         pk: key.clone(),
         sig: enclave
             .sign(&key_conv, &rhex.get_hash(RhexSignatureType::Author))?
-            .try_into()
-            .unwrap(),
+            .to_vec(),
         t: RhexSignatureType::Author,
     });
     rhex.sigs.push(RhexSignature {
         pk: key.clone(),
         sig: enclave
             .sign(&key_conv, &rhex.get_hash(RhexSignatureType::Usher))?
-            .try_into()
-            .unwrap(),
+            .to_vec(),
         t: RhexSignatureType::Usher,
     });
     rhex.sigs.push(RhexSignature {
         pk: key.clone(),
         sig: enclave
             .sign(&key_conv, &rhex.get_hash(RhexSignatureType::Quorum(0)))?
-            .try_into()
-            .unwrap(),
+            .to_vec(),
         t: RhexSignatureType::Quorum(0),
     });
 
