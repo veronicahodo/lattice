@@ -27,6 +27,8 @@ pub fn rebuild(config: &UsherIrohConfig) -> Result<Lattice> {
     let root_scope = fs::read(&root_scope_bootstrap)?;
     let root_rhex: Vec<Rhex> = cbor2::from_slice(&root_scope)?;
 
+    Rhex::chain_to_disk(&format!("{}-root-/", &config.scopes), &root_rhex)?;
+
     // Save the bootstrapped root scope to {config.scopes}/-root-.rhex
     fs::write(format!("{}-root-.rchain", &config.scopes), &root_scope)?;
 

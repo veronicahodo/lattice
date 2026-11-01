@@ -1,11 +1,10 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
 use anyhow::{Result, bail};
 use iroh::PublicKey;
 use scope::{
     Scope,
     membership::Membership,
-    policy::Policy,
     rhex::Rhex,
     ushers::{UsherRole, UsherStatus},
 };
@@ -32,20 +31,40 @@ impl Lattice {
 
             let entry = entry?;
 
-            // skip if a dir
-            if entry.path().is_dir() || !entry.path().ends_with(".rchain") {
+            let (dir, scope_path) = if entry.path().is_dir() || entry.path().ends_with(".rchain") {
+                if entry.path().is_dir() {
+                    let path = format!("{}/genesis.rhex", entry.path().display());
+                    if fs::exists(&path)? {
+                        (
+                            true,
+                            format!(
+                                "{}/",
+                                entry.path().as_os_str().to_str().unwrap().to_string()
+                            ),
+                        )
+                    } else {
+                        continue;
+                    }
+                } else {
+                    let path = entry.path().as_os_str().to_str().unwrap().to_string();
+                    (false, path)
+                }
+            } else {
                 continue;
-            }
+            };
 
-            // Load rchain for the scope
             if verbose {
-                print!("\t🌐 Loading scope: {}...", entry.file_name().display());
+                print!("\t🌐 Loading scope: {}...", scope_path);
             } else {
                 print!(".");
             }
-            let scope_path = entry.path();
-            let rchain_bin = std::fs::read(scope_path)?;
-            let rchain: Vec<Rhex> = cbor2::from_slice(&rchain_bin)?;
+            let rchain = if dir {
+                Rhex::chain_from_disk(&scope_path)?
+            } else {
+                let rchain_bin = std::fs::read(scope_path)?;
+                cbor2::from_slice(&rchain_bin)?
+            };
+
             let scope = Scope::walk_rhex(
                 &rchain[0].intent.scope.clone(),
                 rchain[0].intent.author.clone(),
@@ -53,6 +72,7 @@ impl Lattice {
                 trans_reg,
                 verbose,
             )?;
+
             self.scopes.insert(scope.name.clone(), scope);
             verbose_println("done!".to_string(), verbose);
         }

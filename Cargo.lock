@@ -3201,6 +3201,7 @@ dependencies = [
  "blake3",
  "cbor2",
  "ed25519-dalek 2.2.0",
+ "hex",
  "iroh",
  "iroh-blobs",
  "minicbor",
@@ -4284,6 +4285,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
+ "blake3",
  "cbor2",
  "clap",
  "comms",

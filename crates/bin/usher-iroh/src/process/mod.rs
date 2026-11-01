@@ -29,7 +29,7 @@ pub async fn process_rhex(
     let mut usher_map_guard = appstate.usher_map.write().await;
 
     for c in chatter {
-        let reponse = match c.request {
+        let response = match c.request {
             // *****************************************************
             // **** Author Sign                                 ****
             // *****************************************************
@@ -75,11 +75,18 @@ pub async fn process_rhex(
             // **** Submit                                      ****
             // *****************************************************
             ChatterRequestType::Submit(r) => {
-                append::submit_rhex(config, &r, &mut lattice_guard, &trans_reg_guard).await?
+                append::submit_rhex(
+                    config,
+                    &r,
+                    &mut lattice_guard,
+                    &mut trans_reg_guard,
+                    &enclave_guard,
+                )
+                .await?
             }
         };
 
-        output.push(reponse);
+        output.push(response);
     }
 
     Ok(output)

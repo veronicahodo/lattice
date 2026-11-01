@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 use crate::{
     membership::Membership,
@@ -84,13 +84,10 @@ impl Scope {
     }
 
     /// # slurp_scope(&mut self, path)
-    /// This takes a Rhex chain named "{scopes}/{scope_name}.rchain"
+    /// This takes a Rhex chain named "{scopes}/{scope_name}/"
     /// and loads in into a Vec.
     ///
     pub fn slurp_scope(&self, path: &String) -> Result<Vec<Rhex>> {
-        Ok(Rhex::chain_from_disk(&PathBuf::from(format!(
-            "{}{}.rchain",
-            path, self.name
-        )))?)
+        Ok(Rhex::chain_from_disk(path)?)
     }
 }

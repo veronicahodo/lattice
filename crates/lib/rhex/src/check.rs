@@ -1,10 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    Rhex,
-    signature::{RhexSigAlgo::Ed25519, RhexSignatureType},
-};
+use crate::{Rhex, signature::RhexSigAlgo::Ed25519};
 
 impl Rhex {
     /// # check_curr_hash
@@ -13,7 +10,6 @@ impl Rhex {
     ///
     pub fn check_curr_hash(&self) -> Result<CheckStatus> {
         let calc_curr = self.calc_curr();
-        println!("self: {:?}\ncalced: {:?}", self.calc_curr(), calc_curr);
         if self.curr.is_none() || (calc_curr != self.curr.unwrap()) {
             return Ok(CheckStatus::CurrentHashMismatch {
                 presented: self.curr.unwrap(),

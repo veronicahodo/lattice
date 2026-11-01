@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use anyhow::Result;
 use iroh::PublicKey;
 use rhex::{
@@ -43,7 +41,7 @@ impl Scope {
     /// Checks to see if the `intent.nonce` has been reused for this
     /// Scope
     ///
-    pub fn check_nonce(self, nonce: [u8; 16], path: &PathBuf) -> Result<CheckStatus> {
+    pub fn check_nonce(self, nonce: [u8; 16], path: &String) -> Result<CheckStatus> {
         // skim for nonce reuse
         if self.check_nonce_reused(nonce, path).unwrap() {
             return Ok(CheckStatus::NonceReused);
@@ -124,8 +122,6 @@ impl Scope {
                     output.push(CheckStatus::SignatureInvalid(pos));
                     println!("Sig failed validation: {:?}", sig);
                 } else {
-                    println!("Time before check_per: {}", time);
-
                     output.push(
                         self.check_rt_access_per(
                             &rhex.intent.rt,
@@ -158,7 +154,6 @@ impl Scope {
         quorum_ushers.extend(actor_ushers);
         let policy = self.get_policy_at(time);
         let groups = self.member_of_at(&rhex.intent.author, &time)?;
-
         // Get the window so we know if quorum sigs are within it
         let window = policy.get_window(&rhex.intent.rt, &groups)?;
 

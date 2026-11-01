@@ -2,11 +2,11 @@ use std::fs::{self};
 
 use anyhow::Result;
 use iroh_blobs::store::fs::FsStore;
-use lattice::{Rhex, rhex::iroh::IrohRhex};
+use lattice::Rhex;
 
-pub async fn append_store(rhex_iroh: &IrohRhex) -> Result<[u8; 32]> {
+pub async fn append_store(rhex: &Rhex) -> Result<[u8; 32]> {
     let store = FsStore::load("./store/").await?;
-    let bin = rhex_iroh.to_vec()?;
+    let bin = rhex.data.to_vec();
     let outcome = store.blobs().add_bytes(bin).await?;
     let record_hash = outcome.hash;
     let tag = outcome.name;
@@ -25,11 +25,10 @@ pub async fn append_disk(rhex: &Rhex, scope_path: &String) -> Result<()> {
         None => "genesis.rhex".to_string(),
         Some(hash) => hex::encode(hash),
     };
-    let path = format!("{}{}/{}.rhex", scope_path, scope_name, filename);
+    let path = format!("{}{}/{}", scope_path, scope_name, filename);
     if !fs::exists(&path)? {
         fs::create_dir(format!("{}{}", scope_path, scope_name))?;
     }
-    let bin = rhex.to_iroh()?.to_vec()?;
-    fs::write(path, bin)?;
+    rhex.single_disk_put(&path);
     Ok(())
 }

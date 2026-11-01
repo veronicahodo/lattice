@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use anyhow::Result;
 use rhex::Rhex;
 
@@ -11,7 +9,7 @@ impl Scope {
     /// This is what physically changes the chain on disk as well
     /// as updating the scope's head in the lattice object.
     ///
-    pub fn append(&mut self, rhex: &Rhex, time: u64, path: &PathBuf) -> Result<AppendStatus> {
+    pub fn append(&mut self, rhex: &Rhex, time: u64, path: &String) -> Result<AppendStatus> {
         // Load the chain from disk
         let chain = Rhex::chain_from_disk(path);
         if chain.is_err() {
@@ -36,7 +34,7 @@ impl Scope {
         chain.push(rhex.clone());
 
         // Store back to disk
-        let status = Rhex::chain_to_disk(path.clone(), chain);
+        let status = Rhex::chain_to_disk(&path, &chain);
         if status.is_err() {
             return Ok(DiskError("Failed writing".to_string()));
         }

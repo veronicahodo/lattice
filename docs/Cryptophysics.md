@@ -1,11 +1,11 @@
 # Cryptophysics
 
-## Foreward
+## Foreword
 
 ## Table of Contents
 
 - [Cryptophysics](#cryptophysics)
-  - [Foreward](#foreward)
+  - [Foreword](#foreword)
   - [Table of Contents](#table-of-contents)
   - [Section 1: The Theory Behind](#section-1-the-theory-behind)
     - [1.1 Why Are We Even Here?](#11-why-are-we-even-here)
@@ -36,7 +36,15 @@
 
 ### 1.1 Why Are We Even Here?
 
+That's the proverbial question, isn't it? Why are we even here? I don't mean to answer this existentially but like, if we do... 🤷🏻‍♀️
+
+At some point in my life I got obsessed with data structures. I spent a good chuck of it thinking about the _ultimate data record_. What that was in my mind went through a lot of iterations. Simple lists, linked parent/child relationships, and finally 4D undulating shapes.
+
+But how did you keep those shapes when no one was looking? In the modern era of computing data is frighteningly ephemeral.
+
 ### 1.2 Treating Data Like Physics
+
+It kinda feels odd to even start here.
 
 ### 1.3 Cryptophysics vs. Others
 

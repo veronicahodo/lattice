@@ -55,9 +55,6 @@ pub fn init_lattice(config: &UsherIrohConfig, registry: &TransformRegistry) -> R
         server::rebuild::rebuild(config).unwrap()
     } else {
         let mut building_lattice = Lattice::new();
-        if config.verbose {
-            print!("Loading scopes");
-        }
         building_lattice.build_from_disk(&config.scopes, registry, config.verbose)?;
         building_lattice
     };

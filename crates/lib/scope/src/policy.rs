@@ -34,6 +34,10 @@ impl Policy {
         self.tags.push(tag);
     }
 
+    pub fn to_vec(&self) -> Result<Vec<u8>> {
+        Ok(cbor2::to_canonical_vec(self)?)
+    }
+
     /// # check
     /// Checks to see if the rule for that `rt` (record type) exists
     /// and if a group is specified, that group is a member of that
@@ -165,7 +169,7 @@ impl Policy {
                 return Ok(rule.k);
             }
         }
-        Err(anyhow::anyhow!("Not a valid rule axis"))
+        Err(anyhow::anyhow!("Not a valid rule axis (get_k)"))
     }
 
     /// # get_o(self, rt, groups)
@@ -178,7 +182,7 @@ impl Policy {
                 return Ok(rule.o);
             }
         }
-        Err(anyhow!("Not a valid rule axis"))
+        Err(anyhow!("Not a valid rule axis (get_o)"))
     }
 
     pub fn get_window(&self, rt: &String, groups: &Vec<String>) -> anyhow::Result<u64> {
@@ -187,7 +191,7 @@ impl Policy {
                 return Ok(rule.window);
             }
         }
-        Err(anyhow::anyhow!("Not a valid rule axis"))
+        Err(anyhow::anyhow!("Not a valid rule axis (get_window)"))
     }
 
     /// # process_policy_set(rhex)

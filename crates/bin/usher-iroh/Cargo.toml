@@ -26,3 +26,4 @@ rand = { workspace = true }
 zeroize = { workspace = true }
 comms = { path = "../../lib/comms" }
 hex = { workspace = true }
+blake3 = { workspace = true }

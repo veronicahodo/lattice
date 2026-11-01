@@ -84,10 +84,10 @@ impl Scope {
         for ((map_key, group), memberships) in &self.memberships {
             if key == map_key {
                 let mut memberships = memberships.clone();
-                memberships.retain(|m| &m.issued < time);
+                memberships.retain(|m| &m.issued <= time);
                 if memberships.len() > 0 {
                     let latest = memberships.last().unwrap();
-                    if &latest.eff < time && &latest.exp > time {
+                    if &latest.eff <= time && &latest.exp > time {
                         output.push(group.to_string());
                     }
                 }

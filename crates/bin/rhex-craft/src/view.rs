@@ -4,6 +4,7 @@ use anyhow::{Result, bail};
 use scope::rhex;
 
 pub fn view(input: String) -> Result<()> {
+    let path = PathBuf::from(&input);
     if input.ends_with(".rhex") {
         let rhex = rhex::Rhex::single_disk_get(&input);
         println!("{}", rhex.pretty_print());
@@ -12,8 +13,8 @@ pub fn view(input: String) -> Result<()> {
             true => println!("✅ Valid"),
             false => println!("❌ Invalid"),
         }
-    } else if input.ends_with(".rchain") {
-        let rhex = rhex::Rhex::chain_from_disk(&PathBuf::from(input))?;
+    } else if path.is_dir() {
+        let rhex = rhex::Rhex::chain_from_disk(&input)?;
         let mut count = 0;
         for r in rhex {
             println!("R⬢ #{} in chain:", count);
