@@ -60,7 +60,7 @@ pub fn build(
     rhex.data = data_slice;
     println!("{}", rhex.pretty_print());
     println!("R⬢ crafted.");
-    rhex.single_disk_put(&output);
+    rhex.single_disk_put(&output)?;
     println!("Wrote to {}.", output);
     Ok(())
 }

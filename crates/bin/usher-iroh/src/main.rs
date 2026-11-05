@@ -31,18 +31,15 @@ async fn main() {
     println!("*****************************************************");
     println!("Starting what is probably a terrible excuse for a server...");
     println!("Bro, welcome to the dungeon lol... ⚔️🐉");
-    print!("🕑 Setting clock...");
     // This is the ORIGINAL GT. I re-enable sometimes just to see
     // how long it's been lol
     //let _ = time::set_global_genesis(1757776623099);
 
     // This is the current genesis on what is essentially V3 of the
-    // lattice
-    let _ = time::set_global_genesis(1793124803572);
-    println!(
-        "Current time: {}",
-        time::print_gt(&time::get_current_time())
-    );
+    // lattice - this had to move to walking the scope
+    // because the time set it done on lattice init
+    // let _ = time::set_global_genesis(1793124803572);
+
     let cli = Cli::parse();
     match cli.command {
         Commands::Listen {

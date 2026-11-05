@@ -1,3 +1,4 @@
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use clap::Parser;
 
 use cli::Commands;
@@ -36,12 +37,16 @@ async fn main() {
         } => {
             let _ = finalize::finalize(input, output, use_curr);
         }
-        Commands::Genesis {
-            key,
-            output,
-            enclave_path,
-        } => {
-            let _ = genesis::genesis(key, enclave_path, output);
+        Commands::Genesis { config } => {
+            let config = match config {
+                None => "./config.json".to_string(),
+                Some(cfg) => cfg,
+            };
+            let status = genesis::do_genesis(config);
+            match status {
+                Ok(prev) => println!("Last Hash: {}", URL_SAFE_NO_PAD.encode(prev)),
+                Err(e) => eprintln!("{e}"),
+            }
         }
         Commands::View { input } => {
             let _ = view::view(input);

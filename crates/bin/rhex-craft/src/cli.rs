@@ -35,12 +35,9 @@ pub enum Commands {
         use_curr: bool,
     },
     Genesis {
+        /// Config file for genesis
         #[arg(short, long)]
-        key: String,
-        #[arg(short, long)]
-        output: String,
-        #[arg(short, long)]
-        enclave_path: Option<String>,
+        config: Option<String>,
     },
     View {
         #[arg(short, long)]

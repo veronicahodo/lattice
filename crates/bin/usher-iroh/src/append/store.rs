@@ -23,12 +23,14 @@ pub async fn append_disk(rhex: &Rhex, scope_path: &String) -> Result<()> {
     };
     let filename = match rhex.intent.prev {
         None => "genesis.rhex".to_string(),
-        Some(hash) => hex::encode(hash),
+        Some(hash) => format!("{}.rhex", hex::encode(hash)),
     };
-    let path = format!("{}{}/{}", scope_path, scope_name, filename);
-    if !fs::exists(&path)? {
-        fs::create_dir(format!("{}{}", scope_path, scope_name))?;
+    let scope_dir = format!("{}{}", scope_path, scope_name);
+
+    let fullname = format!("{}/{}", scope_dir, filename);
+    if !fs::exists(&scope_dir)? {
+        fs::create_dir(scope_dir)?;
     }
-    rhex.single_disk_put(&path);
+    rhex.single_disk_put(&fullname)?;
     Ok(())
 }

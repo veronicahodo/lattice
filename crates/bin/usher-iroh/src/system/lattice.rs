@@ -3,12 +3,19 @@ use iroh::PublicKey;
 use lattice::{
     Lattice, Rhex,
     rhex::data::RhexData,
-    scope::{membership::Membership, policy::Policy, rule::Rule},
+    scope::{Scope, membership::Membership, policy::Policy, rule::Rule},
 };
 use serde_json::Value;
 
 pub fn execute_lattice_genesis(rhex: &Rhex, lattice: &mut Lattice) -> Result<()> {
-    let data: RhexData = cbor2::from_slice(&rhex.data)?;
+    let scope = lattice.scopes.get_mut(&"".to_string());
+    let scope = match scope {
+        None => &mut Scope::new(&"".to_string(), rhex.intent.author.clone())?,
+        Some(scope) => scope,
+    };
+    scope.process_scope_changes(rhex)?;
+    Ok(())
+    /*let data: RhexData = cbor2::from_slice(&rhex.data)?;
     match data {
         RhexData::Mixed { meta, binary } => {
             let json: Value = serde_json::from_slice(&meta)?;
@@ -52,5 +59,5 @@ pub fn execute_lattice_genesis(rhex: &Rhex, lattice: &mut Lattice) -> Result<()>
         }
         _ => bail!("Lattice Genesis set to wrong data type"),
     }
-    Ok(())
+    Ok(())*/
 }

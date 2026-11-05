@@ -16,6 +16,7 @@ pub mod build_from_genesis;
 pub mod can_submit;
 pub mod check;
 pub mod from_chain;
+pub mod genesis;
 pub mod get_policy_at;
 pub mod manage;
 pub mod membership;

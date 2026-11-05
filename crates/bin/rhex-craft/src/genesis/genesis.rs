@@ -1,7 +1,6 @@
 use std::time;
 
 use anyhow::Result;
-use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use iroh::PublicKey;
 use key::enclave::Enclave;
 use scope::rhex::{
@@ -12,32 +11,26 @@ use scope::rhex::{
 };
 use serde_json::json;
 
-pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Result<()> {
-    let enclave_path = match enclave_path {
-        Some(ep) => ep,
-        None => "./keys/".to_string(),
-    };
+pub fn genesis(key: &[u8; 32], enclave: &Enclave, output: &String) -> Result<[u8; 32]> {
     let mut rhex = rhex::Rhex::new();
     //let key = key::Key::disk_get(&key);
-    let key_conv: [u8; 32] = URL_SAFE_NO_PAD.decode(key)?.try_into().unwrap();
-    let key_conv = PublicKey::from_bytes(&key_conv)?;
-    let mut enclave = Enclave::new(Some(&enclave_path));
-    let _ = enclave.populate();
-    let binary_vec = vec![key_conv.clone()];
+    let key_conv = PublicKey::from_bytes(&key)?;
+
     let json = json!({
-        "at": time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap().as_secs(),
+        "at": &time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap().as_millis(),
     })
     .to_string();
 
     // Build data
     let data = RhexData::Mixed {
         meta: json.as_bytes().to_vec(),
-        binary: cbor2::to_canonical_vec(&binary_vec)?,
+        binary: key.to_vec(),
     };
     let buf = cbor2::to_canonical_vec(&data)?;
-    let mut hasher = blake3::Hasher::new();
+    let mut hasher: blake3::Hasher = blake3::Hasher::new();
     hasher.update(&buf);
     let hash = hasher.finalize();
+    rhex.data = data.to_vec()?;
 
     // Build intent
     rhex.intent.prev = None;
@@ -81,6 +74,7 @@ pub fn genesis(key: String, enclave_path: Option<String>, output: String) -> Res
     // Mark us complete
     rhex.curr = Some(rhex.calc_curr());
 
-    rhex.single_disk_put(&output);
-    Ok(())
+    rhex.single_disk_put(format!("{}/genesis.rhex", &output).as_str())?;
+
+    Ok(rhex.curr.unwrap())
 }

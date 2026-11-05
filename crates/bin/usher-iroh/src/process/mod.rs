@@ -15,7 +15,7 @@ pub mod verify;
 pub mod walk;
 
 pub async fn process_rhex(
-    chatter: Vec<ChatterRequest>,
+    chatter: &Vec<ChatterRequest>,
     config: &UsherIrohConfig,
     appstate: &mut AppState,
 ) -> Result<Vec<ChatterResponse>> {
@@ -29,7 +29,7 @@ pub async fn process_rhex(
     let mut usher_map_guard = appstate.usher_map.write().await;
 
     for c in chatter {
-        let response = match c.request {
+        let response = match &c.request {
             // *****************************************************
             // **** Author Sign                                 ****
             // *****************************************************

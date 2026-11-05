@@ -12,6 +12,7 @@ impl Scope {
             RhexData::Mixed { meta, binary } => {
                 let meta_breakout: Value = serde_json::from_slice(&meta)?;
                 let keys: Vec<PublicKey> = cbor2::from_slice(&binary)?;
+                println!("Keys extracted: {:?}", keys);
                 (meta_breakout, keys)
             }
             _ => anyhow::bail!("Wrong data type"),
@@ -46,11 +47,12 @@ impl Scope {
             .unwrap_or_else(|| 0);
         let exp = meta
             .get("exp")
-            .and_then(|v| v.as_u64())
+            .and_then(|v: &Value| v.as_u64())
             .unwrap_or_else(|| 1_000_000_000_000_000);
 
         for group in groups {
-            self.add_membership(
+            println!("We should be adding keys {:?} to {}", keys, group);
+            let status = self.add_membership(
                 group,
                 keys.clone(),
                 Membership {
@@ -59,7 +61,11 @@ impl Scope {
                     exp: exp.clone(),
                     by: rhex.intent.author.clone(),
                 },
-            )?;
+            );
+            match status {
+                Err(e) => eprintln!("{e}"),
+                _ => {}
+            }
         }
         Ok(())
     }

@@ -191,12 +191,15 @@ impl Policy {
                 return Ok(rule.window);
             }
         }
-        Err(anyhow::anyhow!("Not a valid rule axis (get_window)"))
+        Err(anyhow::anyhow!(format!(
+            "Not a valid rule axis (get_window). rt: {}, groups: {:?}",
+            rt, groups
+        )))
     }
 
     /// # process_policy_set(rhex)
     ///
-    /// This takes a R⬢ and pulls the data out to reconstitue back
+    /// This takes a R⬢ and pulls the data out to reconstitute back
     /// into a policy that we can just set.
     pub fn process_policy_set(rhex: &Rhex) -> Result<Self> {
         let data: RhexData = cbor2::from_slice(&rhex.data)?;

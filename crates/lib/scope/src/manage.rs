@@ -1,4 +1,4 @@
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use rhex::Rhex;
 
 use crate::{Scope, policy::Policy};
@@ -11,6 +11,8 @@ impl Scope {
     ///
     pub fn process_scope_changes(&mut self, rhex: &Rhex) -> Result<ScopeUpdateStatus> {
         let status = match rhex.intent.rt.as_str() {
+            "lattice:genesis" => self.process_lattice_genesis(rhex),
+            "scope:genesis" => Ok(()),
             "key:grant" => self.process_key_grant(rhex),
             "key:revoke" => self.process_key_revoke(rhex),
             "usher:assign" => self.process_usher_assign(rhex),
@@ -21,8 +23,12 @@ impl Scope {
                     .push((rhex.context.clone().unwrap().at, policy));
                 Ok(())
             }
-            _ => return Ok(ScopeUpdateStatus::NotUsed),
+            _ => {
+                self.head = Some(rhex.curr.unwrap());
+                return Ok(ScopeUpdateStatus::NotUsed);
+            }
         };
+        self.head = Some(rhex.curr.unwrap());
         Ok(ScopeUpdateStatus::from(status))
     }
 }

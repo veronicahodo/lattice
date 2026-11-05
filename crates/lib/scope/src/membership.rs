@@ -55,7 +55,9 @@ impl Scope {
         keys: Vec<PublicKey>,
         membership: Membership,
     ) -> Result<()> {
+        println!("Keys: {:?}", keys);
         for key in keys {
+            println!("Adding key {}...", key);
             self.memberships
                 .insert((key, group.clone()), vec![membership.clone()]);
         }

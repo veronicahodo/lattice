@@ -73,8 +73,11 @@ impl Lattice {
                 verbose,
             )?;
 
-            self.scopes.insert(scope.name.clone(), scope);
+            self.scopes.insert(scope.name.clone(), scope.clone());
             verbose_println("done!".to_string(), verbose);
+            if verbose {
+                println!("{:#?}", scope);
+            }
         }
 
         // Failsafe if there's no scopes at all
@@ -82,9 +85,6 @@ impl Lattice {
         if len == 0 {
             let genesis_key = PublicKey::from_bytes(&Lattice::GENESIS_KEY)?;
             let mut new_root = Scope::new(&"".to_string(), genesis_key.clone())?;
-            /*new_root
-            .policy_map
-            .push((0, Policy::default_lattice_policy()));*/
             new_root.add_membership(
                 "world_line_zero".to_string(),
                 vec![genesis_key],

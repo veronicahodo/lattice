@@ -1,6 +1,7 @@
 use anyhow::Result;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RhexData {
@@ -18,7 +19,7 @@ impl RhexData {
             RhexData::Json(json) => serde_json::to_string(json).unwrap(),
             RhexData::Binary(data) => URL_SAFE_NO_PAD.encode(data),
             RhexData::Mixed { meta, binary } => {
-                let meta_str = serde_json::to_string(meta).unwrap();
+                let meta_str: Value = serde_json::from_slice(meta).unwrap();
                 let binary_str = URL_SAFE_NO_PAD.encode(binary);
                 format!("Meta: {}\n\t\tBinary: {}", meta_str, binary_str)
             }

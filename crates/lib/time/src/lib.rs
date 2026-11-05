@@ -12,7 +12,7 @@ pub fn set_global_genesis(ms: i64) -> Result<(), i64> {
     GLOBAL_ZERO_MS.set(ms)
 }
 
-fn get_global_genesis() -> i64 {
+pub fn get_global_genesis() -> i64 {
     *GLOBAL_ZERO_MS.get().unwrap_or(&0)
 }
 

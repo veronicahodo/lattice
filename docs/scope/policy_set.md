@@ -10,7 +10,7 @@ There is a default rule for `request:rhex`, in which it accepts from anyone at a
 
 ```rust
 Policy {
-    name: Some("Dingus".to_string()),
+    desc: "Dingus".to_string(),
     rules: [
         Rule {
             append: [

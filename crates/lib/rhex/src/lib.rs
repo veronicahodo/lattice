@@ -166,8 +166,9 @@ impl Rhex {
         Self::from_vec(&data)
     }
 
-    pub fn single_disk_put(&self, path: &str) {
-        std::fs::write(path, &self.to_vec()).unwrap();
+    pub fn single_disk_put(&self, path: &str) -> Result<()> {
+        std::fs::write(path, &self.to_vec())?;
+        Ok(())
     }
 
     pub fn validate_curr(&self) -> bool {

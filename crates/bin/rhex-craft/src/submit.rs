@@ -70,7 +70,7 @@ pub async fn submit(rhex: String, address: Option<String>, request: Option<Strin
                     author_sig
                 );
                 rhex.sigs.push(sig.clone());
-                rhex.single_disk_put(&rhex_out);
+                rhex.single_disk_put(&rhex_out)?;
                 println!("Added sig and saved!");
             }
             ChatterResponseType::Rejected(status) => {
@@ -100,7 +100,7 @@ pub async fn submit(rhex: String, address: Option<String>, request: Option<Strin
                 if usher_hash != &usher_calc {
                     bail!("Wrong hash for usher sig!");
                 }
-                rhex.single_disk_put(&rhex_out);
+                rhex.single_disk_put(&rhex_out)?;
                 println!("Added sig and saved!");
             }
             _ => println!("{:?}", response),
@@ -118,7 +118,7 @@ pub async fn submit(rhex: String, address: Option<String>, request: Option<Strin
                     bail!("Hashes don't match for quorum");
                 };
                 quorum_rhex.sigs.push(sig.clone());
-                quorum_rhex.single_disk_put(&rhex_out);
+                quorum_rhex.single_disk_put(&rhex_out)?;
                 println!("Added sig @ {} and saved!", quorum_time);
             }
             _ => println!("{:?}", response),

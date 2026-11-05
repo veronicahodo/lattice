@@ -1,5 +1,5 @@
 use anyhow::Result;
-use comms::chatter::ChatterRequest;
+use comms::chatter::{ChatterRequest, ChatterRequestType};
 use iroh::endpoint::{RecvStream, SendStream};
 
 use crate::{config::UsherIrohConfig, process, server::appstate::AppState};
@@ -17,8 +17,28 @@ pub async fn process_stream(
 
     let requests: Vec<ChatterRequest> = cbor2::from_slice(&buffer)?;
     println!("Received {} R⬢ requests", requests.len());
+    for r in &requests {
+        print!(
+            "{}",
+            match &r.request {
+                ChatterRequestType::AuthorSign {
+                    intent: _,
+                    token: _,
+                } => "✍️".to_string(),
+                ChatterRequestType::UsherSign { intent: _, sigs: _ } => "🔒".to_string(),
+                ChatterRequestType::QuorumSign {
+                    intent: _,
+                    context: _,
+                    sigs: _,
+                } => "👥".to_string(),
+                ChatterRequestType::ObserverSign(_) => "⏱️".to_string(),
+                ChatterRequestType::Submit(rhex) => format!("✅ {}", rhex.intent.rt.clone()),
+            }
+        );
+    }
+    println!();
 
-    let response = match process::process_rhex(requests, config, appstate).await {
+    let response = match process::process_rhex(&requests, config, appstate).await {
         Ok(intents) => intents,
         Err(e) => {
             eprintln!("Processing error: {e}");

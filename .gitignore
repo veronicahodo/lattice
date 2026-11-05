@@ -26,6 +26,7 @@ target
 /target
 # obvs don't want keys showing up in the repo
 *.key
+/root_keys
 # Don't want the actual cached *.rhex files in the repo either
 *.rhex
 # Ignore the testing dir

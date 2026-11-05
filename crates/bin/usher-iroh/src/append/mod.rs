@@ -29,7 +29,7 @@ pub async fn submit_rhex(
     {
         let scope = lattice
             .scopes
-            .get(&rhex.intent.scope)
+            .get_mut(&rhex.intent.scope)
             .ok_or_else(|| anyhow!("Can't find scope."))?;
 
         let status = scope.final_check(rhex, &time)?;
@@ -40,15 +40,19 @@ pub async fn submit_rhex(
                 payload: vec![],
             });
         }
+        scope.process_scope_changes(rhex)?;
     }
-    process::action::process_action(rhex, lattice)?;
 
-    let output = trans::fire_transforms(rhex, trans_reg, DescriptorAction::Appending)?;
+    let output: (CheckStatus, Vec<lattice::rhex::intent::RhexIntent>) =
+        trans::fire_transforms(rhex, trans_reg, DescriptorAction::Appending)?;
     if output.0 != CheckStatus::Success {
         bail!("Failed transform actions");
     }
 
     append_disk(rhex, &config.scopes).await?;
+    let scope = lattice.scopes.get_mut(&rhex.intent.scope).unwrap();
+    scope.head = Some(rhex.curr.unwrap());
+
     Ok(ChatterResponse {
         version: 0,
         response: ChatterResponseType::Accepted(rhex.curr.unwrap()),

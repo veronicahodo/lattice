@@ -29,31 +29,24 @@ impl Scope {
 
         // We set the initial policy. These defaults will set the
         // state for that `lattice:genesis`/`scope:genesis` R⬢
-        let policy = if scope.name.as_str() == "" {
-            scope.add_membership(
+        let (group, policy) = if scope.name.as_str() == "" {
+            (
                 "world_line_zero".to_string(),
-                vec![init_key],
-                Membership {
-                    issued: 0,
-                    eff: 0,
-                    exp: 1_000_000_000_000_000,
-                    by: init_key,
-                },
-            )?;
-            Policy::default_lattice_policy()
+                Policy::default_lattice_policy(),
+            )
         } else {
-            scope.add_membership(
-                "creator".to_string(),
-                vec![init_key],
-                Membership {
-                    issued: 0,
-                    eff: 0,
-                    exp: 1_000_000_000_000_000,
-                    by: init_key,
-                },
-            )?;
-            Policy::default_scope_policy()
+            ("creator".to_string(), Policy::default_scope_policy())
         };
+        let membership = Membership {
+            issued: 0,
+            eff: 0,
+            exp: 1_000_000_000_000_000,
+            by: init_key,
+        };
+        scope.add_membership(group, vec![init_key], membership)?;
+
+        // FIXME: Well, this isn't right. The only policy that should
+        // ever be 0 is the faux one created by `lattice:genesis`
         scope.policy_map.push((0, policy));
 
         // If `rhex` has zero R⬢, we're done so return.
@@ -65,7 +58,7 @@ impl Scope {
         // `init_key`, which is either the lattice master key (mine)
         // or the scope creator's.
         if verbose {
-            println!("Checking inital author...");
+            println!("Checking initial author...");
         }
         let first_author = rhex[0].intent.author;
         if init_key != first_author {
@@ -86,7 +79,10 @@ impl Scope {
             let result = scope.process_scope_changes(r)?;
             match result {
                 ScopeUpdateStatus::Failed(err) => {
-                    bail!(format!("Position: {}, Error: {}", pos, err));
+                    bail!(format!(
+                        "Update Scope Failed - Position: {}, Error: {}",
+                        pos, err
+                    ));
                 }
                 _ => { /* ??? */ }
             }
