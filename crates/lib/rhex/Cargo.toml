@@ -19,3 +19,4 @@ iroh-blobs = { workspace = true }
 cbor2 = { workspace = true }
 time = { path = "../time" }
 hex = { workspace = true }
+key = { path = "../key" }

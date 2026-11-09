@@ -36,6 +36,7 @@ pub mod intent;
 pub mod iroh;
 pub mod print;
 pub mod respond;
+pub mod rt_structs;
 pub mod signature;
 pub mod validate;
 

@@ -4,7 +4,7 @@ use key::enclave::Enclave;
 use lattice::{Lattice, Rhex, rhex::check::CheckStatus};
 use transform::{descriptor::DescriptorAction, registry::TransformRegistry};
 
-use crate::{append::store::append_disk, config::UsherIrohConfig, process, request, trans};
+use crate::{append::store::append_disk, config::UsherIrohConfig, request, trans};
 
 pub mod store;
 
@@ -64,6 +64,11 @@ fn is_request(rhex: &Rhex) -> bool {
     if rhex.intent.prev.is_none() {
         return false;
     }
-    let request_types = ["request:rhex", "request:data", "request:full"];
+    let request_types = [
+        "request:rhex",
+        "request:data",
+        "request:full",
+        "request:head",
+    ];
     request_types.contains(&rhex.intent.rt.as_str())
 }

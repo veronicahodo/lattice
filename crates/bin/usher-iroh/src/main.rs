@@ -10,7 +10,6 @@ use util::{verbose_print, verbose_println};
 
 pub mod append;
 pub mod author;
-pub mod bps;
 pub mod cli;
 pub mod config;
 pub mod gossip;

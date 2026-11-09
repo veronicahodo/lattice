@@ -84,7 +84,7 @@ impl Lattice {
         let len = self.scopes.len();
         if len == 0 {
             let genesis_key = PublicKey::from_bytes(&Lattice::GENESIS_KEY)?;
-            let mut new_root = Scope::new(&"".to_string(), genesis_key.clone())?;
+            let mut new_root = Scope::new(&"".to_string(), &genesis_key)?;
             new_root.add_membership(
                 "world_line_zero".to_string(),
                 vec![genesis_key],

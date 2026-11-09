@@ -11,7 +11,7 @@ impl Scope {
         creator: PublicKey,
         _trans: &TransformRegistry,
     ) -> Result<Self> {
-        let mut scope = Scope::new(&rhex[0].intent.scope, creator.clone())?;
+        let mut scope = Scope::new(&rhex[0].intent.scope, &creator)?;
         for r in rhex {
             let check = scope.final_check(&mut r.clone(), &r.context.clone().unwrap().at)?;
             if check.len() != 1 || check[0] != CheckStatus::Success {

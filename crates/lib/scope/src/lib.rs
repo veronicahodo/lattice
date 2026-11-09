@@ -18,10 +18,12 @@ pub mod check;
 pub mod from_chain;
 pub mod genesis;
 pub mod get_policy_at;
+pub mod handlers;
 pub mod manage;
 pub mod membership;
 pub mod policy;
 pub mod process_key;
+pub mod rt_interactions;
 pub mod rule;
 pub mod ushers;
 pub mod validate;
@@ -43,7 +45,7 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn new(name: &String, creator: PublicKey) -> Result<Self> {
+    pub fn new(name: &String, creator: &PublicKey) -> Result<Self> {
         let ship = Membership {
             issued: 0,
             eff: 0,
@@ -54,7 +56,7 @@ impl Scope {
         let mut ushers = HashMap::new();
         let mut endpoint = HashMap::new();
         endpoint.insert(
-            PublicKey::from_bytes(&creator)?,
+            creator.clone(),
             vec![UsherStatus {
                 issued: 0,
                 eff: 0,
@@ -64,7 +66,7 @@ impl Scope {
         );
         ushers.insert(UsherRole::Actor, endpoint);
 
-        let default_policy = match name.as_str() {
+        let default_policy: Policy = match name.as_str() {
             "" => {
                 memberships.insert((creator.clone(), "world_line_zero".to_string()), vec![ship]);
                 Policy::default_lattice_policy()

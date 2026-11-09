@@ -1,5 +1,5 @@
 use anyhow::Result;
-use comms::chatter::{ChatterRequest, ChatterRequestType, ChatterResponse, ChatterResponseType};
+use comms::chatter::{ChatterRequest, ChatterRequestType, ChatterResponse};
 
 use crate::{
     append,
@@ -24,9 +24,9 @@ pub async fn process_rhex(
     // Set locks
     let mut lattice_guard = appstate.lattice.write().await;
     let mut trans_reg_guard = appstate.trans_registry.write().await;
-    let mut iam_guard = appstate.iam.write().await;
-    let mut enclave_guard = appstate.enclave.write().await;
-    let mut usher_map_guard = appstate.usher_map.write().await;
+    let iam_guard = appstate.iam.write().await;
+    let enclave_guard = appstate.enclave.write().await;
+    let _usher_map_guard = appstate.usher_map.write().await;
 
     for c in chatter {
         let response = match &c.request {

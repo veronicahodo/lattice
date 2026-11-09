@@ -47,7 +47,7 @@ pub fn sign(
         Some(o) => o,
         None => rhexfile,
     };
-    rhex.single_disk_put(output);
+    rhex.single_disk_put(output)?;
 
     Ok(())
 }

@@ -98,6 +98,13 @@ pub enum CheckStatus {
     SchemaFailed(String),
     SchemaNotFound(String),
 
+    // **** DATA RELATED ****
+    DataIncorrectType {
+        submitted: String,
+        expected: String,
+    },
+    DataFailedCborDecode,
+
     // **** CONTEXT RELATED ****
     SpacialDataIncorrect(String),
     TimeReversal {

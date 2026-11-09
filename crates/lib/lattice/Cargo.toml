@@ -11,3 +11,6 @@ anyhow = { workspace = true }
 util = { path = "../util/" }
 cbor2 = { workspace = true }
 iroh = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+time = { path = "../time" }

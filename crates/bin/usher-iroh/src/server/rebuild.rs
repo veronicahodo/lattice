@@ -42,7 +42,7 @@ pub fn rebuild(config: &UsherIrohConfig) -> Result<Lattice> {
     // Make the root scope an object
     let mut root_scope = lattice::scope::Scope::new(
         &"".to_string(),
-        PublicKey::from_bytes(&lattice::Lattice::GENESIS_KEY)?,
+        &PublicKey::from_bytes(&lattice::Lattice::GENESIS_KEY)?,
     )?;
     // ...and populate it
     root_scope.head = Some(root_rhex[root_rhex.len() - 1].calc_curr());

@@ -6,6 +6,7 @@ pub use scope::rhex::Rhex;
 pub use usher;
 
 pub mod bootstrap;
+pub mod handlers;
 pub mod startup;
 
 pub struct Lattice {
@@ -37,5 +38,11 @@ impl Lattice {
 
     pub fn add_usher(&mut self, usher: usher::Usher) {
         self.ushers.insert(usher.pk, usher);
+    }
+
+    pub fn reset(&mut self) {
+        self.scopes = HashMap::new();
+        self.ushers = HashMap::new();
+        self.gt = 0;
     }
 }

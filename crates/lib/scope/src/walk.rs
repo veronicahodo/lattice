@@ -25,7 +25,7 @@ impl Scope {
         if verbose {
             println!("Constructing scope {}...", name);
         }
-        let mut scope = Scope::new(name, init_key)?;
+        let mut scope = Scope::new(name, &init_key)?;
 
         // We set the initial policy. These defaults will set the
         // state for that `lattice:genesis`/`scope:genesis` R⬢

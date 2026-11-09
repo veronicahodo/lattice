@@ -3,6 +3,8 @@ use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::check::CheckStatus;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RhexData {
     None,
@@ -33,8 +35,12 @@ impl RhexData {
         Ok(cbor2::to_canonical_vec(self)?)
     }
 
-    pub fn from_vec(data: &Vec<u8>) -> Result<Self> {
-        Ok(cbor2::from_slice(data)?)
+    pub fn from_slice(slice: &Vec<u8>) -> Result<Self, CheckStatus> {
+        let data = cbor2::from_slice::<Self>(slice);
+        match data {
+            Err(_) => Err(CheckStatus::DataFailedCborDecode),
+            Ok(data) => Ok(data),
+        }
     }
 
     pub fn get_hash(&self) -> [u8; 32] {
@@ -49,5 +55,15 @@ impl RhexData {
         hasher.update(&data);
         hasher.update(&data);
         hasher.finalize().into()
+    }
+
+    pub fn get_type_string(&self) -> Result<String> {
+        Ok(match self {
+            RhexData::None => "none".to_string(),
+            RhexData::Binary(_) => "binary".to_string(),
+            RhexData::Mixed { meta: _, binary: _ } => "mixed".to_string(),
+            RhexData::Json(_) => "json".to_string(),
+            RhexData::Removed(_) => "removed".to_string(),
+        })
     }
 }

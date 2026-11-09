@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rhex::Rhex;
 
-use crate::{Scope, policy::Policy};
+use crate::{Scope, policy::Policy, rt_interactions::scope};
 
 impl Scope {
     /// # process_scope_changes(self, rhex)
@@ -21,6 +21,10 @@ impl Scope {
                 let policy = Policy::process_policy_set(rhex)?;
                 self.policy_map
                     .push((rhex.context.clone().unwrap().at, policy));
+                Ok(())
+            }
+            "scope:create" => {
+                let scope = scope::create::spawn_scope(rhex)?;
                 Ok(())
             }
             _ => {

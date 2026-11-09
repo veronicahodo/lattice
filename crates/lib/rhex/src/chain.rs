@@ -31,7 +31,7 @@ impl Rhex {
                 None => format!("{}genesis.rhex", path),
                 Some(prev) => format!("{}{}.rhex", path, hex::encode(prev)),
             };
-            r.single_disk_put(&filename);
+            r.single_disk_put(&filename)?;
         }
         Ok(())
     }

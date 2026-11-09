@@ -1803,18 +1803,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "iroh-services"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "blake3",
- "iroh",
- "iroh-blobs",
- "minicbor",
- "serde",
-]
-
-[[package]]
 name = "iroh-tickets"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2025,6 +2013,9 @@ dependencies = [
  "cbor2",
  "iroh",
  "scope",
+ "serde",
+ "serde_json",
+ "time 0.1.0",
  "transform",
  "usher",
  "util",
@@ -3204,6 +3195,7 @@ dependencies = [
  "hex",
  "iroh",
  "iroh-blobs",
+ "key",
  "minicbor",
  "rand",
  "serde",
