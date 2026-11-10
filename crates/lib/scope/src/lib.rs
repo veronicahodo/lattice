@@ -61,7 +61,7 @@ impl Scope {
                 issued: 0,
                 eff: 0,
                 exp: 1_000_000_000_000_000,
-                by: PublicKey::from_bytes(&[0; 32])?,
+                by: creator.clone(),
             }],
         );
         ushers.insert(UsherRole::Actor, endpoint);

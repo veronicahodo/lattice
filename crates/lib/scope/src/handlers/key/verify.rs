@@ -1,14 +1,14 @@
 use anyhow::{Result, bail};
-use rhex::{Rhex, check::CheckStatus, data::RhexData, rt_structs::key::RtKeyGrant};
+use rhex::{Rhex, data::RhexData, rt_structs::key::RtKeyGrant};
 
 use crate::Scope;
 
-pub fn verify_key_grant(rhex: &Rhex, scope: &Scope) -> Result<CheckStatus> {
+pub fn verify_key_grant(rhex: &Rhex, scope: &Scope) -> Result<RtKeyGrant> {
     let data = match RhexData::from_slice(&rhex.data) {
-        Err(_) => return Ok(CheckStatus::DataFailedCborDecode),
+        Err(_) => bail!("verify `key:grant` failed CBOR on decode"),
         Ok(data) => data,
     };
-    let _ = match data {
+    let key_grant = match data {
         RhexData::Binary(bin) => RtKeyGrant::from_slice(&bin)?,
         _ => bail!("Wrong data type on verify `key:grant`"),
     };
@@ -18,6 +18,10 @@ pub fn verify_key_grant(rhex: &Rhex, scope: &Scope) -> Result<CheckStatus> {
         None => time::get_current_time(),
     };
     let policy = scope.get_policy_at(&time);
-
-    Ok(CheckStatus::Success)
+    let membership = scope.member_of_at(&rhex.intent.author, &time)?;
+    if policy.can_submit("key:grant", &membership) {
+        Ok(key_grant)
+    } else {
+        bail!("verify `key:grant` cannot submit this data successfully")
+    }
 }

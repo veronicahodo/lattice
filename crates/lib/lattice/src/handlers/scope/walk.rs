@@ -1,7 +1,7 @@
 use anyhow::Result;
 use scope::{
     Scope,
-    rhex::{Rhex, data::RhexData},
+    rhex::{Rhex, data::RhexData, rt_structs::scope::RtScopeUpdate},
 };
 
 use crate::{Lattice, handlers::scope::verify};
@@ -26,5 +26,10 @@ pub fn walk_scope_request(rhex: &Rhex) -> Result<()> {
     // a) formatting and b) the requested scope is a child of this one.
     verify::verify_scope_request(rhex)?;
 
+    Ok(())
+}
+
+pub fn walk_scope_update(rhex: &Rhex, scope_path: &String) -> Result<()> {
+    let _ = verify::verify_scope_update(rhex, scope_path)?;
     Ok(())
 }

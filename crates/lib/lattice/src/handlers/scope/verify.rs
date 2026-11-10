@@ -2,8 +2,10 @@ use anyhow::{Result, bail};
 use scope::rhex::{
     Rhex,
     data::RhexData,
-    rt_structs::scope::{RtScopeCreate, RtScopeRequest},
+    rt_structs::scope::{RtScopeCreate, RtScopeRequest, RtScopeUpdate},
 };
+
+use crate::handlers;
 
 /// # verify_scope_create(rhex_data)
 ///
@@ -50,4 +52,30 @@ pub fn verify_scope_request(rhex: &Rhex) -> Result<RtScopeRequest> {
     }
 
     Ok(scope_request)
+}
+
+pub fn verify_scope_update(rhex: &Rhex, scope_path: &String) -> Result<RtScopeUpdate> {
+    let udata = RhexData::from_slice(&rhex.data);
+    let update = match udata {
+        Err(_) => bail!("verify `scope:update` failed CBOR decode"),
+        Ok(data) => match data {
+            RhexData::Binary(bin) => RtScopeUpdate::from_slice(&bin)?,
+            _ => bail!("verify `scope:update` couldn't CBOR decode from ::Binary"),
+        },
+    };
+    let chain = Rhex::chain_from_disk(scope_path)?;
+    for c in chain {
+        if c.intent.rt.as_str() == "scope:create" {
+            let data = RhexData::from_slice(&c.data);
+            let data = match data {
+                Err(_) => bail!("`scope:create` data failed to decode in a `scope:update`"),
+                Ok(data) => data,
+            };
+            let payload = handlers::scope::verify::verify_scope_create(&data)?;
+            if payload.scope == update.subscope {
+                return Ok(update);
+            }
+        }
+    }
+    bail!("Didn't find the matching `scope:create` on verify `scope:update`")
 }
