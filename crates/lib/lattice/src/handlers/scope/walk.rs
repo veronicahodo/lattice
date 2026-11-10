@@ -1,7 +1,8 @@
 use anyhow::Result;
 use scope::{
     Scope,
-    rhex::{Rhex, data::RhexData, rt_structs::scope::RtScopeUpdate},
+    rhex::{Rhex, data::RhexData},
+    ushers::{UsherRole, UsherStatus},
 };
 
 use crate::{Lattice, handlers::scope::verify};
@@ -29,7 +30,34 @@ pub fn walk_scope_request(rhex: &Rhex) -> Result<()> {
     Ok(())
 }
 
-pub fn walk_scope_update(rhex: &Rhex, scope_path: &String) -> Result<()> {
-    let _ = verify::verify_scope_update(rhex, scope_path)?;
+pub fn walk_scope_update(rhex: &Rhex, scope_path: &String, lattice: &mut Lattice) -> Result<()> {
+    let scope_update = verify::verify_scope_update(rhex, scope_path)?;
+
+    let scope = lattice.scopes.get_mut(&scope_update.subscope);
+    let scope = if scope.is_none() {
+        // See... I don't know how to feel about this here.
+        // This gets executed if we have a `scope:update` but not
+        // come across a `scope:create` for that scope.
+        let new_scope = Scope::new(&scope_update.subscope, &rhex.intent.author)?;
+        lattice.add_scope(&new_scope);
+        lattice.scopes.get_mut(&scope_update.subscope).unwrap()
+    } else {
+        scope.unwrap()
+    };
+
+    let time = rhex.context.clone().unwrap().at;
+    let actors = scope.ushers.entry(UsherRole::Actor).or_default();
+
+    for usher in scope_update.ushers {
+        actors.insert(
+            usher.clone(),
+            vec![UsherStatus {
+                issued: time.clone(),
+                eff: time.clone(),
+                exp: 1_000_000_000_000_000,
+                by: rhex.intent.author.clone(),
+            }],
+        );
+    }
     Ok(())
 }

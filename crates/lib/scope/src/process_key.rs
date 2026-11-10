@@ -70,8 +70,8 @@ impl Scope {
         Ok(())
     }
 
-    pub fn process_key_revoke(&mut self, rhex: &Rhex) -> Result<()> {
-        let data: RhexData = cbor2::from_slice(&rhex.data)?;
+    pub fn process_key_revoke(&mut self, _rhex: &Rhex) -> Result<()> {
+        /*    let data: RhexData = cbor2::from_slice(&rhex.data)?;
         let (meta, keys) = match &data {
             RhexData::Mixed { meta, binary } => {
                 let meta_value: Value = serde_json::from_slice(&meta)?;
@@ -87,7 +87,7 @@ impl Scope {
             let groups = util::value_to_string_arr(groups.unwrap().clone())?;
             // Strip them
             self.remove_membership(keys, groups);
-        }
+        } */
         Ok(())
     }
 }

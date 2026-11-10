@@ -1,11 +1,11 @@
 use anyhow::{Result, bail};
 use iroh::PublicKey;
-use rhex::{Rhex, check::CheckStatus};
+use rhex::{Rhex, check::CheckStatus, rt_structs::policy::RtPolicySet};
 use transform::{
     descriptor::DescriptorAction, output::TransformOutput, registry::TransformRegistry,
 };
 
-use crate::{Scope, manage::ScopeUpdateStatus, membership::Membership, policy::Policy};
+use crate::{Scope, manage::ScopeUpdateStatus, membership::Membership};
 
 impl Scope {
     /// # walk(self, init_key, rhex)
@@ -32,10 +32,10 @@ impl Scope {
         let (group, policy) = if scope.name.as_str() == "" {
             (
                 "world_line_zero".to_string(),
-                Policy::default_lattice_policy(),
+                RtPolicySet::default_lattice_policy(),
             )
         } else {
-            ("creator".to_string(), Policy::default_scope_policy())
+            ("creator".to_string(), RtPolicySet::default_scope_policy())
         };
         let membership = Membership {
             issued: 0,

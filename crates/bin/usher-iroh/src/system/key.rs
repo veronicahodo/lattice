@@ -33,7 +33,7 @@ pub fn execute_key_revoke(rhex: &Rhex, lattice: &mut Lattice) -> Result<()> {
         RhexData::Binary(bin) => cbor2::from_slice(&bin)?,
         _ => bail!("RhexData incorrect type for execute key:revoke"),
     };
-    scope.remove_membership(key_revoke.keys, key_revoke.groups);
+    scope.remove_membership(&key_revoke.keys, &key_revoke.groups, &rhex.intent.author)?;
     Ok(())
 }
 

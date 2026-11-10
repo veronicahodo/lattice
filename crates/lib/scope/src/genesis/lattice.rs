@@ -1,9 +1,13 @@
 use anyhow::{Result, bail};
 use iroh::PublicKey;
-use rhex::{Rhex, data::RhexData};
+use rhex::{
+    Rhex,
+    data::RhexData,
+    rt_structs::policy::{RtPolicySet, Rule},
+};
 use serde_json::Value;
 
-use crate::{Scope, membership::Membership, policy::Policy, rule::Rule};
+use crate::{Scope, membership::Membership};
 
 impl Scope {
     pub fn process_lattice_genesis(&mut self, rhex: &Rhex) -> Result<()> {
@@ -34,7 +38,7 @@ impl Scope {
         } else {
             println!("Time is now: {}", time::print_gt(&time::get_current_time()));
         }
-        let policy = Policy {
+        let policy = RtPolicySet {
             desc: "Lattice Genesis Awaiting".to_string(),
             rules: vec![Rule {
                 append: vec!["world_line_zero".to_string()],

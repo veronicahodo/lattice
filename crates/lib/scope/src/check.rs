@@ -3,7 +3,6 @@ use iroh::PublicKey;
 use rhex::{
     Rhex,
     check::CheckStatus,
-    data::RhexData,
     signature::RhexSignatureType::{self, Observer, Quorum},
 };
 

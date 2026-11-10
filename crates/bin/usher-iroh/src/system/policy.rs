@@ -1,5 +1,8 @@
 use anyhow::{Result, bail};
-use lattice::{Lattice, Rhex, rhex::data::RhexData, scope::policy::Policy};
+use lattice::{
+    Lattice, Rhex,
+    rhex::{data::RhexData, rt_structs::policy::RtPolicySet},
+};
 
 pub fn execute_policy_set(rhex: &Rhex, lattice: &mut Lattice) -> Result<()> {
     let scope = match lattice.scopes.get_mut(&rhex.intent.scope) {
@@ -7,7 +10,7 @@ pub fn execute_policy_set(rhex: &Rhex, lattice: &mut Lattice) -> Result<()> {
         Some(scope) => scope,
     };
     let data: RhexData = cbor2::from_slice(&rhex.data)?;
-    let policy: Policy = match data {
+    let policy: RtPolicySet = match data {
         RhexData::Binary(bin) => cbor2::from_slice(&bin)?,
         _ => bail!("RhexData not binary in execute policy:set"),
     };

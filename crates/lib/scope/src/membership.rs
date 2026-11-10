@@ -67,12 +67,24 @@ impl Scope {
     /// # remove_membership
     /// Removes a set of keys from the set of groups
     ///
-    pub fn remove_membership(&mut self, keys: Vec<PublicKey>, groups: Vec<String>) {
-        for key in keys {
-            for group in &groups {
-                self.memberships.remove(&(key.clone(), group.clone()));
-            }
+    pub fn remove_membership(
+        &mut self,
+        keys: &Vec<PublicKey>,
+        groups: &Vec<String>,
+        by: &PublicKey,
+    ) -> Result<()> {
+        let tombstone = Membership {
+            issued: 0,
+            eff: 0,
+            exp: 0,
+            by: by.clone(),
+        };
+
+        for group in groups {
+            self.add_membership(group.clone(), keys.clone(), tombstone.clone())?;
         }
+
+        Ok(())
     }
 
     /// # member_of_at

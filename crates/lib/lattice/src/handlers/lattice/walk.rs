@@ -3,16 +3,18 @@ use iroh::PublicKey;
 use scope::{
     Scope,
     membership::Membership,
-    policy::Policy,
-    rhex::{Rhex, data::RhexData},
-    rule::Rule,
+    rhex::{
+        Rhex,
+        data::RhexData,
+        rt_structs::policy::{RtPolicySet, Rule},
+    },
 };
 
 use crate::{Lattice, handlers::lattice::verify};
 
 impl Lattice {
     pub fn walk_lattice_genesis(&mut self, rhex: &Rhex) -> Result<PublicKey> {
-        let policy = Policy {
+        let policy = RtPolicySet {
             desc: "Initial Genesis Policy".to_string(),
             rules: vec![Rule {
                 append: vec!["world_line_zero".to_string()],

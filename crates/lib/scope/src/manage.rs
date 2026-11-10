@@ -1,7 +1,7 @@
 use anyhow::Result;
-use rhex::Rhex;
+use rhex::{Rhex, rt_structs::policy::RtPolicySet};
 
-use crate::{Scope, policy::Policy, rt_interactions::scope};
+use crate::{Scope, rt_interactions::scope};
 
 impl Scope {
     /// # process_scope_changes(self, rhex)
@@ -18,13 +18,13 @@ impl Scope {
             "usher:assign" => self.process_usher_assign(rhex),
             "usher:revoke" => self.process_usher_revoke(rhex),
             "policy:set" => {
-                let policy = Policy::process_policy_set(rhex)?;
+                let policy = RtPolicySet::process_policy_set(rhex)?;
                 self.policy_map
                     .push((rhex.context.clone().unwrap().at, policy));
                 Ok(())
             }
             "scope:create" => {
-                let scope = scope::create::spawn_scope(rhex)?;
+                let _scope = scope::create::spawn_scope(rhex)?;
                 Ok(())
             }
             _ => {

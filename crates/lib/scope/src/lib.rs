@@ -2,14 +2,13 @@ use std::collections::HashMap;
 
 use crate::{
     membership::Membership,
-    policy::Policy,
     ushers::{UsherRole, UsherStatus},
 };
 
 use anyhow::Result;
 use iroh::PublicKey;
 pub use rhex;
-use rhex::Rhex;
+use rhex::{Rhex, rt_structs::policy::RtPolicySet};
 
 pub mod append;
 pub mod build_from_genesis;
@@ -33,7 +32,7 @@ pub struct Scope {
     // canonical name of the scope
     pub name: String,
     // policy calculated from Rhex
-    pub policy_map: Vec<(u64, Policy)>,
+    pub policy_map: Vec<(u64, RtPolicySet)>,
     // groups of members
     pub memberships: HashMap<(PublicKey, String), Vec<Membership>>,
     // ushers in the scope and their priority
@@ -66,12 +65,12 @@ impl Scope {
         );
         ushers.insert(UsherRole::Actor, endpoint);
 
-        let default_policy: Policy = match name.as_str() {
+        let default_policy: RtPolicySet = match name.as_str() {
             "" => {
                 memberships.insert((creator.clone(), "world_line_zero".to_string()), vec![ship]);
-                Policy::default_lattice_policy()
+                RtPolicySet::default_lattice_policy()
             }
-            _ => Policy::default_scope_policy(),
+            _ => RtPolicySet::default_scope_policy(),
         };
 
         let mut new_policy = Vec::new();

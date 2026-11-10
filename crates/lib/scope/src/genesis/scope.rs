@@ -1,11 +1,11 @@
 use anyhow::Result;
-use rhex::Rhex;
+use rhex::{Rhex, rt_structs::policy::RtPolicySet};
 
-use crate::{Scope, membership::Membership, policy::Policy};
+use crate::{Scope, membership::Membership};
 
 impl Scope {
     pub fn process_scope_genesis(&mut self, rhex: &Rhex) -> Result<()> {
-        let policy = Policy::default_scope_policy();
+        let policy = RtPolicySet::default_scope_policy();
         let time = match &rhex.context {
             None => time::get_current_time(),
             Some(context) => context.at,
