@@ -1,8 +1,11 @@
 use anyhow::Result;
 use scope::{
     Scope,
-    rhex::{Rhex, data::RhexData},
-    ushers::{UsherRole, UsherStatus},
+    rhex::{
+        Rhex,
+        data::RhexData,
+        rt_structs::usher::{UsherRole, UsherStatus},
+    },
 };
 
 use crate::{Lattice, handlers::scope::verify};

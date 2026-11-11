@@ -5,8 +5,10 @@ use iroh::PublicKey;
 use scope::{
     Scope,
     membership::Membership,
-    rhex::Rhex,
-    ushers::{UsherRole, UsherStatus},
+    rhex::{
+        Rhex,
+        rt_structs::usher::{UsherRole, UsherStatus},
+    },
 };
 use transform::registry::TransformRegistry;
 use util::verbose_println;

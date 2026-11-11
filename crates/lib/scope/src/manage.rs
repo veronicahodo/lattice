@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rhex::{Rhex, rt_structs::policy::RtPolicySet};
 
-use crate::{Scope, rt_interactions::scope};
+use crate::Scope;
 
 impl Scope {
     /// # process_scope_changes(self, rhex)
@@ -24,7 +24,7 @@ impl Scope {
                 Ok(())
             }
             "scope:create" => {
-                let _scope = scope::create::spawn_scope(rhex)?;
+                //let _scope = scope::create::spawn_scope(rhex)?;
                 Ok(())
             }
             _ => {

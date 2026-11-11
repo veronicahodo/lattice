@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 
-use crate::{
-    membership::Membership,
-    ushers::{UsherRole, UsherStatus},
-};
+use crate::membership::Membership;
 
 use anyhow::Result;
 use iroh::PublicKey;
 pub use rhex;
-use rhex::{Rhex, rt_structs::policy::RtPolicySet};
+use rhex::{
+    Rhex,
+    rt_structs::{
+        policy::RtPolicySet,
+        usher::{UsherRole, UsherStatus},
+    },
+};
 
 pub mod append;
 pub mod build_from_genesis;
@@ -22,11 +25,11 @@ pub mod manage;
 pub mod membership;
 pub mod policy;
 pub mod process_key;
-pub mod rt_interactions;
 pub mod rule;
 pub mod ushers;
 pub mod validate;
 pub mod walk;
+
 #[derive(Debug, Clone)]
 pub struct Scope {
     // canonical name of the scope
@@ -37,6 +40,8 @@ pub struct Scope {
     pub memberships: HashMap<(PublicKey, String), Vec<Membership>>,
     // ushers in the scope and their priority
     pub ushers: HashMap<UsherRole, HashMap<PublicKey, Vec<UsherStatus>>>,
+    // List of aliases and their targets
+    pub aliases: HashMap<String, [u8; 32]>,
     // The current hash of the last record in the chain.
     pub head: Option<[u8; 32]>,
     // Last updated
@@ -80,6 +85,7 @@ impl Scope {
             policy_map: new_policy,
             memberships,
             ushers,
+            aliases: HashMap::new(),
             head: None,
             updated: 0,
         })

@@ -22,20 +22,31 @@ pub fn action_scope_request(rhex: &Rhex) -> Result<Rhex> {
             rhex.intent.scope
         )
     }
+    if payload.token.len() == 0 {
+        // Like really, I don't have anything to do to validate?
+        // Once we get some sort of finance or ratio thing maybe?
+        // I guess I'll mark it with a TODO:
+        // bail!("Invalid token for `scope:request`")
+    }
     let scope_create = RtScopeCreate {
         scope: payload.scope,
         creator: rhex.intent.author.clone(),
         ushers: payload.ushers,
     };
 
+    let data = RhexData::Binary(scope_create.to_vec()?);
+
     let mut intent = RhexIntent::new();
+    intent.prev = rhex.curr.clone();
     intent.scope = rhex.intent.scope.clone();
     intent.author = rhex.intent.usher.clone();
     intent.usher = rhex.intent.usher.clone();
+    intent.schema = Some("rhex://schema.scope.create".to_string());
+    intent.data_hash = Some(data.get_data_hash());
     Ok(Rhex::build_with(
         &intent,
         &None,
         &vec![],
-        &Some(scope_create.to_vec()?),
+        &Some(data.to_vec()?),
     ))
 }

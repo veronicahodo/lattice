@@ -2,8 +2,10 @@ use anyhow::{Result, bail};
 use iroh::PublicKey;
 use lattice::{
     Lattice, Rhex,
-    rhex::data::RhexData,
-    scope::ushers::{UsherRole, UsherStatus},
+    rhex::{
+        data::RhexData,
+        rt_structs::usher::{UsherRole, UsherStatus},
+    },
 };
 use serde_json::Value;
 

@@ -3,10 +3,11 @@ use iroh::PublicKey;
 use rhex::{
     Rhex,
     check::CheckStatus,
+    rt_structs::usher::UsherRole,
     signature::RhexSignatureType::{self, Observer, Quorum},
 };
 
-use crate::{Scope, ushers::UsherRole};
+use crate::Scope;
 
 impl Scope {
     /// # check_same_scope

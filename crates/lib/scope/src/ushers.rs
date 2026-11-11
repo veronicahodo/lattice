@@ -2,19 +2,14 @@ use std::collections::HashMap;
 
 use anyhow::{Result, bail};
 use iroh::{EndpointId, PublicKey};
-use rhex::{Rhex, data::RhexData};
-use serde::{Deserialize, Serialize};
+use rhex::{
+    Rhex,
+    data::RhexData,
+    rt_structs::usher::{UsherRole, UsherStatus},
+};
 use serde_json::Value;
 
 use crate::Scope;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UsherStatus {
-    pub issued: u64,
-    pub eff: u64,
-    pub exp: u64,
-    pub by: PublicKey,
-}
 
 impl Scope {
     /// # ushers_at(self, time)
@@ -165,24 +160,4 @@ impl Scope {
         }
         Ok(())
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UsherAssignment {
-    pub issued: u64,
-    pub priority: u8,
-    pub roles: Vec<UsherRole>,
-    pub eff: u64,
-    pub exp: u64,
-    pub by: [u8; 32],
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub enum UsherRole {
-    Actor,
-    Mirror,
-    Cache,
-    Quorum,
-    Observer,
-    Other,
 }

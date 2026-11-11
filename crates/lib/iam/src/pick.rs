@@ -1,6 +1,6 @@
 use anyhow::Result;
 use iroh::PublicKey;
-use lattice::scope::{Scope, ushers::UsherRole};
+use lattice::{rhex::rt_structs::usher::UsherRole, scope::Scope};
 
 use crate::IAm;
 
